@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitation - Panneau d'administration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .content p {
+            margin: 10px 0;
+        }
+        .content .password {
+            display: inline-block;
+            background-color: #f9f9f9;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #333;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #f4f4f9;
+            font-size: 14px;
+            color: #777;
+        }
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Invitation au Panneau d'Administration</h1>
+        </div>
+        <div class="content">
+            <p>Bonjour,</p>
+            <p>Vous avez été invité à accéder au panneau d'administration de notre site. Veuillez utiliser le mot de passe provisoire ci-dessous pour vous connecter :</p>
+            <p class="password">{{link}}</p>
+            <p>Nous vous recommandons de changer ce mot de passe dès votre première connexion.</p>
+            <a href="#" class="btn">Accéder au Panneau d'Administration</a>
+            <p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
+            <p>Cordialement,</p>
+            <p><strong>L’équipe de MADAMOVE</strong></p>
+        </div>
+        <div class="footer">
+            &copy; 2025 MADAMOVE. Tous droits réservés.
+        </div>
+    </div>
+</body>
+</html>

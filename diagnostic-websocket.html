@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic WebSocket Transport</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        button:hover { background: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Diagnostic WebSocket Transport</h1>
+    
+    <div class="test-section">
+        <h3>1. Test de connectivité API REST</h3>
+        <button onclick="testApiConnectivity()">Tester API REST</button>
+        <div id="apiResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Socket.IO basique</h3>
+        <input type="text" id="serverUrl" value="http://localhost:3001" placeholder="URL du serveur" style="width: 300px;">
+        <button onclick="testBasicSocketConnection()">Tester connexion basique</button>
+        <div id="socketResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test avec authentification</h3>
+        <input type="text" id="testToken" placeholder="Token JWT (optionnel)" style="width: 400px;">
+        <button onclick="testAuthenticatedConnection()">Tester avec auth</button>
+        <div id="authResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Logs détaillés</h3>
+        <button onclick="clearDiagnosticLogs()">Vider les logs</button>
+        <div id="diagnosticLogs" class="log"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('diagnosticLogs');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logElement.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearDiagnosticLogs() {
+            document.getElementById('diagnosticLogs').innerHTML = '';
+        }
+
+        async function testApiConnectivity() {
+            const resultDiv = document.getElementById('apiResult');
+            const serverUrl = document.getElementById('serverUrl').value;
+            
+            log('Test de connectivité API REST...', 'info');
+            
+            try {
+                // Test 1: Health check ou endpoint basique
+                log(`Test connexion vers ${serverUrl}...`, 'info');
+                
+                const response = await fetch(`${serverUrl}/api`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<div class="success">✅ API REST accessible</div>';
+                    log('API REST accessible', 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="warning">⚠️ API accessible mais erreur ${response.status}</div>`;
+                    log(`API accessible mais erreur ${response.status}`, 'warning');
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur API: ${error.message}</div>`;
+                log(`Erreur API: ${error.message}`, 'error');
+                
+                // Test ping simple
+                try {
+                    log('Test ping basique...', 'info');
+                    const pingResponse = await fetch(serverUrl.replace('/api', ''));
+                    log(`Ping serveur: ${pingResponse.status}`, pingResponse.ok ? 'success' : 'warning');
+                } catch (pingError) {
+                    log(`Ping échoué: ${pingError.message}`, 'error');
+                }
+            }
+        }
+
+        function testBasicSocketConnection() {
+            const resultDiv = document.getElementById('socketResult');
+            const serverUrl = document.getElementById('serverUrl').value;
+            
+            log('Test connexion Socket.IO basique...', 'info');
+            
+            // Nettoyer toute connexion existante
+            if (window.diagnosticSocket) {
+                window.diagnosticSocket.disconnect();
+            }
+            
+            // Test de connexion basique
+            const socket = io(serverUrl, {
+                transports: ['polling', 'websocket'], // Forcer les deux transports
+                timeout: 10000
+            });
+            
+            window.diagnosticSocket = socket;
+            
+            socket.on('connect', () => {
+                resultDiv.innerHTML = '<div class="success">✅ Socket.IO connecté (basique)</div>';
+                log(`Socket.IO connecté avec ID: ${socket.id}`, 'success');
+                log(`Transport utilisé: ${socket.io.engine.transport.name}`, 'info');
+            });
+            
+            socket.on('connect_error', (error) => {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur Socket.IO: ${error.message}</div>`;
+                log(`Erreur connexion Socket.IO: ${error.message}`, 'error');
+                log(`Type d'erreur: ${error.type}`, 'error');
+                log(`Description: ${error.description}`, 'error');
+            });
+            
+            socket.on('disconnect', (reason) => {
+                log(`Socket.IO déconnecté: ${reason}`, 'warning');
+            });
+            
+            // Timeout de sécurité
+            setTimeout(() => {
+                if (!socket.connected) {
+                    socket.disconnect();
+                    resultDiv.innerHTML = '<div class="error">❌ Timeout - Connexion impossible</div>';
+                    log('Timeout: Connexion Socket.IO impossible', 'error');
+                }
+            }, 15000);
+        }
+
+        function testAuthenticatedConnection() {
+            const resultDiv = document.getElementById('authResult');
+            const serverUrl = document.getElementById('serverUrl').value;
+            const token = document.getElementById('testToken').value;
+            
+            log('Test connexion Socket.IO avec authentification...', 'info');
+            
+            // Nettoyer toute connexion existante
+            if (window.authSocket) {
+                window.authSocket.disconnect();
+            }
+            
+            const socketConfig = {
+                transports: ['polling', 'websocket'],
+                timeout: 10000
+            };
+            
+            if (token) {
+                socketConfig.auth = { token };
+                log('Token fourni, test avec authentification', 'info');
+            } else {
+                log('Pas de token, test sans authentification', 'warning');
+            }
+            
+            // Test de connexion au namespace transport
+            const socket = io(`${serverUrl}/transport`, socketConfig);
+            window.authSocket = socket;
+            
+            socket.on('connect', () => {
+                resultDiv.innerHTML = '<div class="success">✅ Connexion authentifiée réussie</div>';
+                log(`Connexion authentifiée réussie avec ID: ${socket.id}`, 'success');
+            });
+            
+            socket.on('connected', (data) => {
+                log(`Événement 'connected' reçu: ${JSON.stringify(data)}`, 'success');
+                resultDiv.innerHTML = `<div class="success">✅ Authentification complète: ${data.userType}</div>`;
+            });
+            
+            socket.on('connect_error', (error) => {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur auth: ${error.message}</div>`;
+                log(`Erreur connexion authentifiée: ${error.message}`, 'error');
+            });
+            
+            socket.on('error', (error) => {
+                log(`Erreur serveur: ${JSON.stringify(error)}`, 'error');
+            });
+            
+            socket.on('disconnect', (reason) => {
+                log(`Socket authentifié déconnecté: ${reason}`, 'warning');
+            });
+            
+            // Timeout
+            setTimeout(() => {
+                if (!socket.connected) {
+                    socket.disconnect();
+                    resultDiv.innerHTML = '<div class="error">❌ Timeout connexion authentifiée</div>';
+                    log('Timeout: Connexion authentifiée impossible', 'error');
+                }
+            }, 15000);
+        }
+
+        // Initialisation
+        log('Diagnostic WebSocket Transport chargé', 'info');
+        log('Étapes recommandées:', 'info');
+        log('1. Tester API REST pour vérifier que le serveur répond', 'info');
+        log('2. Tester connexion Socket.IO basique', 'info');
+        log('3. Tester avec authentification si vous avez un token', 'info');
+        
+        // Auto-test au chargement
+        setTimeout(() => {
+            log('Lancement du test automatique...', 'info');
+            testApiConnectivity();
+        }, 1000);
+    </script>
+</body>
+</html>

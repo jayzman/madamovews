@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug WebSocket Transport</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .status.connected { background-color: #d4edda; color: #155724; }
+        .status.disconnected { background-color: #f8d7da; color: #721c24; }
+        .status.error { background-color: #fff3cd; color: #856404; }
+        .log { background-color: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; margin: 10px 0; max-height: 300px; overflow-y: auto; }
+        button { padding: 10px 15px; margin: 5px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
+        .test-section { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug WebSocket Transport - madamovews</h1>
+    
+    <div class="test-section">
+        <h2>Configuration de connexion</h2>
+        <div>
+            <label>URL du serveur:</label>
+            <input type="text" id="serverUrl" value="http://localhost:3001" style="width: 200px;">
+        </div>
+        <div>
+            <label>Namespace:</label>
+            <select id="namespace">
+                <option value="">Pas de namespace (root)</option>
+                <option value="/transport" selected>Transport (/transport)</option>
+            </select>
+        </div>
+        <div>
+            <label>Token JWT (optionnel):</label>
+            <input type="text" id="jwtToken" placeholder="Votre token JWT..." style="width: 400px;">
+        </div>
+        <button onclick="connectSocket()">Se connecter</button>
+        <button onclick="disconnectSocket()">Se déconnecter</button>
+    </div>
+
+    <div id="connectionStatus" class="status disconnected">
+        🔴 Déconnecté
+    </div>
+
+    <div class="test-section">
+        <h2>Tests de connexion</h2>
+        <button onclick="testBasicConnection()">Test connexion basique</button>
+        <button onclick="testWithNamespace()">Test avec namespace /transport</button>
+        <button onclick="testServerReachability()">Test accessibilité serveur</button>
+        <button onclick="clearLog()">Effacer le log</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Log des événements</h2>
+        <div id="eventLog" class="log">Prêt pour les tests...\n</div>
+    </div>
+
+    <script>
+        let socket = null;
+        const logDiv = document.getElementById('eventLog');
+        const statusDiv = document.getElementById('connectionStatus');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            logDiv.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type}] ${message}`);
+        }
+
+        function updateStatus(connected, message) {
+            if (connected) {
+                statusDiv.className = 'status connected';
+                statusDiv.innerHTML = '🟢 Connecté - ' + message;
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.innerHTML = '🔴 Déconnecté - ' + message;
+            }
+        }
+
+        function connectSocket() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            const namespace = document.getElementById('namespace').value;
+            const token = document.getElementById('jwtToken').value;
+            
+            const fullUrl = serverUrl + namespace;
+            log(`Tentative de connexion à: ${fullUrl}`);
+
+            const options = {
+                transports: ['websocket', 'polling'],
+                timeout: 5000,
+                forceNew: true
+            };
+
+            if (token) {
+                options.auth = { token: token };
+                options.query = { token: token };
+            }
+
+            try {
+                socket = io(fullUrl, options);
+
+                socket.on('connect', () => {
+                    log('Connexion réussie!', 'success');
+                    log(`Socket ID: ${socket.id}`, 'success');
+                    updateStatus(true, `Socket ID: ${socket.id}`);
+                });
+
+                socket.on('disconnect', (reason) => {
+                    log(`Déconnexion: ${reason}`, 'error');
+                    updateStatus(false, reason);
+                });
+
+                socket.on('connect_error', (error) => {
+                    log(`Erreur de connexion: ${error.message}`, 'error');
+                    log(`Type d'erreur: ${error.type}`, 'error');
+                    log(`Description: ${error.description}`, 'error');
+                    updateStatus(false, `Erreur: ${error.message}`);
+                });
+
+                socket.on('error', (error) => {
+                    log(`Erreur socket: ${error}`, 'error');
+                });
+
+                // Événements spécifiques au transport
+                socket.on('position-updated', (data) => {
+                    log(`Position mise à jour reçue: ${JSON.stringify(data)}`, 'success');
+                });
+
+                socket.on('eta-updated', (data) => {
+                    log(`ETA mis à jour: ${JSON.stringify(data)}`, 'success');
+                });
+
+                socket.on('transport-status-changed', (data) => {
+                    log(`Status transport changé: ${JSON.stringify(data)}`, 'success');
+                });
+
+            } catch (error) {
+                log(`Erreur lors de la création du socket: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnectSocket() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                log('Déconnexion manuelle');
+                updateStatus(false, 'Déconnexion manuelle');
+            }
+        }
+
+        function testBasicConnection() {
+            log('=== TEST DE CONNEXION BASIQUE ===');
+            document.getElementById('namespace').value = '';
+            connectSocket();
+        }
+
+        function testWithNamespace() {
+            log('=== TEST AVEC NAMESPACE /transport ===');
+            document.getElementById('namespace').value = '/transport';
+            connectSocket();
+        }
+
+        async function testServerReachability() {
+            log('=== TEST D\'ACCESSIBILITÉ DU SERVEUR ===');
+            const serverUrl = document.getElementById('serverUrl').value;
+            
+            try {
+                log(`Test de ping vers: ${serverUrl}`);
+                const response = await fetch(serverUrl + '/api', { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    log('✅ Serveur accessible via HTTP', 'success');
+                } else {
+                    log(`⚠️ Serveur répond mais avec le status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Serveur non accessible: ${error.message}`, 'error');
+                
+                // Test alternatif avec socket.io endpoint
+                try {
+                    const socketResponse = await fetch(serverUrl + '/socket.io/', {
+                        method: 'GET',
+                        mode: 'cors'
+                    });
+                    log(`Socket.IO endpoint status: ${socketResponse.status}`, socketResponse.ok ? 'success' : 'error');
+                } catch (socketError) {
+                    log(`Socket.IO endpoint non accessible: ${socketError.message}`, 'error');
+                }
+            }
+        }
+
+        function clearLog() {
+            logDiv.innerHTML = 'Log effacé...\n';
+        }
+
+        // Test automatique au chargement
+        window.onload = function() {
+            log('Page chargée, prêt pour les tests');
+            log('Serveur détecté sur le port: 3001');
+        };
+    </script>
+</body>
+</html>

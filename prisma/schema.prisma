@@ -1,0 +1,528 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  nom       String
+  prenom    String
+  role      Role     @default(UTILISATEUR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  AdminMessage AdminMessage[]
+}
+
+enum Role {
+  ADMIN
+  GESTIONNAIRE
+  UTILISATEUR
+  SUPPORT
+}
+
+model Chauffeur {
+  id              Int             @id @default(autoincrement())
+  nom             String
+  prenom          String
+  email           String          @unique
+  password        String?
+  telephone       String          @unique
+  statut          StatutChauffeur
+  dateInscription DateTime        @default(now())
+  evaluation      Float           @default(0)
+  statutActivite  StatutActivite  @default(ACTIF)
+  nbCourses       Int             @default(0)
+  vehiculeId      Int?
+  vehicule        Vehicule?       @relation(fields: [vehiculeId], references: [id])
+  courses         Course[]
+  documents       Document[]
+  incidents       Incident[]
+  credits         Credit?
+  photoUrl        String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  Notification    Notification[]
+  Message         Message[]
+  Transport       Transport[]
+  AdminMessage    AdminMessage[]
+  resetCode       String?
+  resetCodeExpiry DateTime?
+
+  // Champs pour OTP SMS
+  smsOtp        String?
+  smsOtpExpiry  DateTime?
+  phoneVerified Boolean?  @default(false)
+}
+
+enum StatutChauffeur {
+  SALARIE
+  INDEPENDANT
+}
+
+enum StatutActivite {
+  ACTIF
+  INACTIF
+  SUSPENDU
+}
+
+enum CategoryVehicule {
+  BASIC
+  CONFORT
+  FAMILIALE
+  VIP
+  BUS
+}
+
+enum FuelType {
+  ESSENCE
+  DIESEL
+  ELECTRIQUE
+  HYBRIDE
+  GPL
+}
+
+enum GearType {
+  MANUEL
+  AUTOMATIQUE
+  SEMI_AUTOMATIQUE
+}
+
+model Vehicule {
+  id                    Int                @id @default(autoincrement())
+  marque                String
+  modele                String
+  immatriculation       String             @unique
+  type                  TypeVehicule
+  categorie             CategoryVehicule   @default(BASIC)
+  statut                StatutVehicule     @default(DISPONIBLE)
+  tarifHoraire          Float?             @default(0) // Tarif par heure pour le transport
+  tarifJournalier       Float?             @default(0) // Tarif par jour pour la location
+  maxPower              Float? // Puissance maximale en chevaux (hp)
+  fuelConsumption       Float? // Consommation en km/L
+  maxSpeed              Int? // Vitesse maximale en km/h
+  acceleration          Float? // 0-60mph en secondes
+  capacity              Int? // Capacité (nombre de places)
+  color                 String?
+  fuelType              FuelType? // Type de carburant
+  gearType              GearType? // Type de boîte de vitesses
+  dateAcquisition       DateTime
+  kilometrage           Int                @default(0)
+  photos                String[]           @default([])
+  chauffeurs            Chauffeur[]
+  dateControleTechnique DateTime
+  maintenances          Maintenance[]
+  incidents             Incident[]
+  locations             LocationVehicule[]
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  Transport Transport[]
+}
+
+enum TypeVehicule {
+  VAN
+  BUS
+  BERLINE
+  SUV
+  AUTOCAR
+}
+
+enum StatutVehicule {
+  DISPONIBLE
+  ASSIGNE
+  EN_MAINTENANCE
+  EN_SERVICE
+}
+
+model Client {
+  id               Int       @id @default(autoincrement())
+  nom              String
+  prenom           String
+  email            String    @unique
+  password         String?
+  telephone        String    @unique
+  adresse          String?
+  ville            String?
+  dateInscription  DateTime? @default(now())
+  verified         Boolean?  @default(false)
+  validationCode   String?
+  resetCode        String?
+  resetCodeExpires DateTime?
+
+  // Champs pour OTP SMS
+  smsOtp        String?
+  smsOtpExpiry  DateTime?
+  phoneVerified Boolean?  @default(false)
+
+  statut           StatutClient          @default(ACTIF)
+  nbCourses        Int?                  @default(0)
+  preferences      String?
+  stripeCustomerId String? // ID client dans Stripe
+  courses          Course[]
+  locations        LocationVehicule[]
+  profileUrl       String?
+  photoUrl       String?
+  favorites        FavoriteDestination[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  Notification Notification[]
+  Message      Message[]
+  Transport    Transport[]
+}
+
+enum StatutClient {
+  ACTIF
+  INACTIF
+  BANNI
+}
+
+model Course {
+  id                Int               @id @default(autoincrement())
+  chauffeurId       Int?
+  chauffeur         Chauffeur?        @relation(fields: [chauffeurId], references: [id])
+  clientId          Int?
+  client            Client?           @relation(fields: [clientId], references: [id])
+  startLocation     String
+  endLocation       String
+  startTime         DateTime?
+  endTime           DateTime?
+  estimatedDuration String
+  currentLocation   String?
+  estimatedPrice    Float
+  finalPrice        Float?
+  paymentMethod     String
+  status            StatutCourse      @default(EN_ATTENTE)
+  typeService       TypeService       @default(DIRECT)
+  locationId        Int?              @unique
+  location          LocationVehicule? @relation(fields: [locationId], references: [id])
+  transportId       Int?              @unique
+  transport         Transport?        @relation(fields: [transportId], references: [id])
+  incidents         Incident[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  Message Message[]
+}
+
+enum StatutCourse {
+  EN_ATTENTE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+enum TypeService {
+  DIRECT
+  LOCATION
+  TRANSPORT
+}
+
+model Incident {
+  id          Int            @id @default(autoincrement())
+  type        TypeIncident
+  description String
+  date        DateTime       @default(now())
+  status      StatutIncident @default(NON_RESOLU)
+  courseId    Int?
+  course      Course?        @relation(fields: [courseId], references: [id])
+  chauffeurId Int?
+  chauffeur   Chauffeur?     @relation(fields: [chauffeurId], references: [id])
+  vehiculeId  Int?
+  vehicule    Vehicule?      @relation(fields: [vehiculeId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+enum TypeIncident {
+  RETARD
+  LITIGE
+  PROBLEME_TECHNIQUE
+  ACCIDENT
+  AUTRE
+}
+
+enum StatutIncident {
+  NON_RESOLU
+  EN_COURS_DE_RESOLUTION
+  RESOLU
+}
+
+model Document {
+  id             Int          @id @default(autoincrement())
+  nom            String
+  type           TypeDocument
+  fichier        String       @default("")
+  mimeType       String       @default("")
+  taille         Int          @default(0)
+  dateExpiration DateTime?
+  status         String       @default("EN_ATTENTE")
+  chauffeurId    Int
+  chauffeur      Chauffeur    @relation(fields: [chauffeurId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum TypeDocument {
+  PERMIS_DE_CONDUIRE
+  ASSURANCE
+  CONTROLE_TECHNIQUE
+  CARTE_PROFESSIONNELLE
+  AUTRE
+}
+
+enum StatutDocument {
+  VALIDE
+  EN_ATTENTE
+  REJETE
+  EXPIRE
+}
+
+model Maintenance {
+  id          Int               @id @default(autoincrement())
+  date        DateTime
+  type        String
+  description String?
+  cout        Float
+  kilometrage Int
+  statut      StatutMaintenance @default(PLANIFIE)
+  vehiculeId  Int
+  vehicule    Vehicule          @relation(fields: [vehiculeId], references: [id])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+enum StatutMaintenance {
+  PLANIFIE
+  EN_COURS
+  TERMINE
+  ANNULE
+}
+
+model Credit {
+  id          Int       @id @default(autoincrement())
+  solde       Float     @default(0)
+  chauffeurId Int       @unique
+  chauffeur   Chauffeur @relation(fields: [chauffeurId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model LocationVehicule {
+  id                   Int            @id @default(autoincrement())
+  clientId             Int
+  client               Client         @relation(fields: [clientId], references: [id])
+  vehiculeId           Int
+  vehicule             Vehicule       @relation(fields: [vehiculeId], references: [id])
+  dateDebut            DateTime
+  dateFin              DateTime
+  lieuDepart           String?
+  lieuDestination      String?
+  departLatitude       Float?
+  departLongitude      Float?
+  destinationLatitude  Float?
+  destinationLongitude Float?
+  distance             Float? // En kilomètres
+  montantTotal         Float
+  status               StatutLocation @default(RESERVATION)
+  stripeCustomerId     String?
+  stripePaymentId      String?
+  stripeSessionId      String?        @unique
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  Message Message[]
+  course  Course?
+}
+
+enum StatutLocation {
+  RESERVATION
+  CONFIRMEE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+model Transport {
+  id                    Int             @id @default(autoincrement())
+  clientId              Int
+  client                Client          @relation(fields: [clientId], references: [id])
+  vehiculeId            Int
+  vehicule              Vehicule        @relation(fields: [vehiculeId], references: [id])
+  chauffeurId           Int?
+  chauffeur             Chauffeur?      @relation(fields: [chauffeurId], references: [id])
+  dateReservation       DateTime        @default(now())
+  adresseDepart         String
+  adresseDestination    String
+  departLatitude        Float
+  departLongitude       Float
+  destinationLatitude   Float
+  destinationLongitude  Float
+  distanceEstimee       Float // En kilomètres
+  dureeEstimee          Int // En minutes
+  montantEstime         Float
+  montantFinal          Float?
+  heureDepart           DateTime? // Heure réelle de début du transport
+  heureArrivee          DateTime? // Heure réelle de fin du transport
+  dureeReelle           Int? // Durée réelle en minutes
+  distanceReelle        Float? // Distance réelle parcourue en kilomètres
+  tarifHoraireApplique  Float? // Tarif horaire du véhicule au moment du transport
+  status                StatutTransport @default(EN_ATTENTE)
+  stripePaymentIntentId String? // ID de la pré-autorisation Stripe
+  evaluation            Int? // Note donnée par le client (1-5)
+  commentaire           String? // Commentaire du client
+  positionActuelle      Json? // Position actuelle du chauffeur {lat: float, lng: float}
+  
+  // Champs pour la gestion des modes de paiement
+  paymentMethod         PaymentMethod   @default(STRIPE) // Mode de paiement choisi
+  cashPaymentStatus     CashPaymentStatus? // Statut du paiement espèces
+  cashAmountReceived    Float? // Montant réellement reçu en espèces
+  cashConfirmedAt       DateTime? // Date de confirmation du paiement espèces
+  cashConfirmedBy       Int? // ID du chauffeur qui a confirmé le paiement
+  
+  // Champs pour les codes promo
+  promoCodeId           Int?
+  promoCode             PromoCode?      @relation(fields: [promoCodeId], references: [id])
+  montantReduction      Float           @default(0) // Montant de la réduction appliquée
+  
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  messages     Message[]      @relation("MessageTransport")
+  Message      Message[]      @relation("MessageTransports")
+  Notification Notification[]
+  course       Course?
+}
+
+enum StatutTransport {
+  EN_ATTENTE // En attente de validation par un chauffeur
+  VALIDE // Validé par le chauffeur
+  EN_ROUTE_RAMASSAGE // Chauffeur en route vers le point de ramassage
+  ARRIVE_RAMASSAGE // Chauffeur arrivé au point de ramassage
+  EN_COURSE // Transport en cours
+  TERMINE // Transport terminé
+  ANNULE // Transport annulé
+  EN_ATTENTE_PAIEMENT
+}
+
+enum PaymentMethod {
+  STRIPE // Paiement par carte via Stripe
+  CASH   // Paiement en espèces
+}
+
+enum CashPaymentStatus {
+  PENDING    // En attente de paiement
+  CONFIRMED  // Paiement confirmé par le chauffeur
+  DISPUTED   // Montant contesté
+}
+
+model Notification {
+  id          Int              @id @default(autoincrement())
+  titre       String
+  message     String
+  type        TypeNotification
+  lu          Boolean          @default(false)
+  userId      Int? // Pour les utilisateurs admin/staff
+  chauffeurId Int?
+  chauffeur   Chauffeur?       @relation(fields: [chauffeurId], references: [id])
+  clientId    Int?
+  client      Client?          @relation(fields: [clientId], references: [id])
+  donnees     String? // JSON data pour des infos supplémentaires
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  Transport Transport[]
+}
+
+enum TypeNotification {
+  PAIEMENT
+  RESERVATION
+  COURSE
+  SYSTEME
+  OFFRE
+  CARTE
+  MAINTENANCE
+  AUTRE
+}
+
+model Message {
+  id             Int               @id @default(autoincrement())
+  contenu        String
+  lu             Boolean           @default(false)
+  clientId       Int?
+  client         Client?           @relation(fields: [clientId], references: [id])
+  chauffeurId    Int?
+  chauffeur      Chauffeur?        @relation(fields: [chauffeurId], references: [id])
+  reservationId  Int?
+  reservation    LocationVehicule? @relation(fields: [reservationId], references: [id])
+  courseId       Int?
+  course         Course?           @relation(fields: [courseId], references: [id])
+  transportId    Int?
+  transport      Transport?        @relation("MessageTransport", fields: [transportId], references: [id])
+  expediteurType TypeExpediteur
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  Transport Transport[] @relation("MessageTransports")
+}
+
+enum TypeExpediteur {
+  CLIENT
+  CHAUFFEUR
+  ADMIN
+}
+
+model AdminMessage {
+  id             Int            @id @default(autoincrement())
+  contenu        String
+  lu             Boolean        @default(false)
+  userId         Int
+  user           User           @relation(fields: [userId], references: [id])
+  chauffeurId    Int
+  chauffeur      Chauffeur      @relation(fields: [chauffeurId], references: [id])
+  expediteurType TypeExpediteur
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model FavoriteDestination {
+  id          Int      @id @default(autoincrement())
+  title       String
+  address     String
+  description String?
+  latitude    Float
+  longitude   Float
+  client      Client   @relation(fields: [clientId], references: [id])
+  clientId    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PromoCode {
+  id               Int         @id @default(autoincrement())
+  code             String      @unique
+  description      String?     // Description du code promo (ex: "Réduction de bienvenue")
+  typeReduction    String      // "PERCENTAGE" ou "FIXED_AMOUNT"
+  valeurReduction  Float
+  dateExpiration   DateTime?
+  utilisationsMax  Int?
+  utilisations     Int         @default(0)
+  montantMinimum   Float?
+  actif            Boolean     @default(true)
+
+  transports       Transport[]
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}

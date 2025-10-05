@@ -1,0 +1,355 @@
+{
+  "info": {
+    "name": "Transport Real-Time API",
+    "description": "Collection pour tester le système de suivi en temps réel des transports",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "transport_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"client@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.access_token);",
+                  "    console.log('Token JWT sauvegardé:', response.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Chauffeur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"chauffeur@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/chauffeurs/login",
+              "host": ["{{base_url}}"],
+              "path": ["chauffeurs", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.access_token);",
+                  "    console.log('Token JWT chauffeur sauvegardé:', response.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Transport Management",
+      "item": [
+        {
+          "name": "Créer Transport",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": 1,\n  \"vehiculeId\": 1,\n  \"adresseDepart\": \"123 Rue de Rivoli, Paris\",\n  \"adresseDestination\": \"456 Avenue des Champs-Élysées, Paris\",\n  \"departLatitude\": 48.8566,\n  \"departLongitude\": 2.3522,\n  \"destinationLatitude\": 48.8738,\n  \"destinationLongitude\": 2.2950\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transports",
+              "host": ["{{base_url}}"],
+              "path": ["transports"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('transport_id', response.id);",
+                  "    console.log('Transport créé avec ID:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Valider Transport",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/valider/1",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "valider", "1"]
+            }
+          }
+        },
+        {
+          "name": "Démarrer Transport",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/start",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "start"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Position Tracking",
+      "item": [
+        {
+          "name": "Mettre à jour Position",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 48.8606,\n  \"longitude\": 2.3376,\n  \"statusInfo\": \"En route vers le client - Test Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/position",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "position"]
+            }
+          }
+        },
+        {
+          "name": "Obtenir Position Actuelle",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/position",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "position"]
+            }
+          }
+        },
+        {
+          "name": "Historique des Positions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/position/history?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "position", "history"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Real-Time Tracking",
+      "item": [
+        {
+          "name": "Démarrer Suivi Automatique",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/tracking/start",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "tracking", "start"]
+            }
+          }
+        },
+        {
+          "name": "Arrêter Suivi Automatique",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/tracking/stop",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "tracking", "stop"]
+            }
+          }
+        },
+        {
+          "name": "Statistiques de Suivi",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transports/tracking/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "tracking", "statistics"]
+            }
+          }
+        },
+        {
+          "name": "Activer Suivi Temps Réel",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/tracking/1",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "tracking", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transport Status",
+      "item": [
+        {
+          "name": "Changer Statut - En Route Ramassage",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"EN_ROUTE_RAMASSAGE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Changer Statut - Arrivé Ramassage",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ARRIVE_RAMASSAGE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Changer Statut - En Course",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"EN_COURSE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Terminer Transport",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/transports/{{transport_id}}/end",
+              "host": ["{{base_url}}"],
+              "path": ["transports", "{{transport_id}}", "end"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

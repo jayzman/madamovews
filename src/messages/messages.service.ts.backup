@@ -1,0 +1,592 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateMessageDto } from './dto/create-message.dto';
+import { UpdateMessageDto } from './dto/update-message.dto';
+import { Prisma, TypeExpediteur } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
+import { TypeNotification } from '../notifications/dto/create-notification.dto';
+
+@Injectable()
+export class MessagesService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
+  async create(createMessageDto: CreateMessageDto) {
+    const { clientId, chauffeurId, reservationId, courseId, transportId } = createMessageDto;
+
+    // Vérifier que l'on fournit soit une réservation, soit une course, soit un transport
+    if (!reservationId && !courseId && !transportId) {
+      throw new Error('Vous devez fournir l\'ID d\'une réservation, d\'une course ou d\'un transport');
+    }
+
+    // Si l'ID du transport est fourni, vérifier qu'il existe
+    if (transportId) {
+      const transport = await this.prisma.transport.findUnique({
+        where: { id: transportId },
+        include: { client: true, chauffeur: true },
+      });
+
+      if (!transport) {
+        throw new NotFoundException(`Transport avec l'ID ${transportId} non trouvé`);
+      }
+
+      // Si l'expediteurType est CLIENT, le clientId doit correspondre au transport
+      if (createMessageDto.expediteurType === TypeExpediteur.CLIENT && 
+          transport.clientId !== clientId) {
+        throw new Error('Ce client n\'est pas associé à ce transport');
+      }
+
+      // Si l'expediteurType est CHAUFFEUR, le chauffeurId doit correspondre au transport
+      if (createMessageDto.expediteurType === TypeExpediteur.CHAUFFEUR && 
+          transport.chauffeurId !== chauffeurId) {
+        throw new Error('Ce chauffeur n\'est pas associé à ce transport');
+      }
+    }
+
+    // Si l'ID de la réservation est fourni, vérifier qu'elle existe
+    if (reservationId) {
+      const reservation = await this.prisma.locationVehicule.findUnique({
+        where: { id: reservationId },
+        include: { client: true, vehicule: true },
+      });
+
+      if (!reservation) {
+        throw new NotFoundException(`Réservation avec l'ID ${reservationId} non trouvée`);
+      }
+
+      // Si l'expediteurType est CLIENT, le clientId doit correspondre à la réservation
+      if (createMessageDto.expediteurType === TypeExpediteur.CLIENT && 
+          reservation.clientId !== clientId) {
+        throw new Error('Ce client n\'est pas associé à cette réservation');
+      }
+
+      // Pour les chauffeurs, on doit vérifier si le véhicule a un chauffeur assigné
+      if (createMessageDto.expediteurType === TypeExpediteur.CHAUFFEUR) {
+        const vehicule = await this.prisma.vehicule.findUnique({
+          where: { id: reservation.vehiculeId },
+          include: { chauffeurs: true },
+        });
+
+        if (!vehicule || !vehicule.chauffeurs.some(c => c.id === chauffeurId)) {
+          throw new Error('Ce chauffeur n\'est pas associé à cette réservation');
+        }
+      }
+    }
+
+    // Si l'ID de la course est fourni, vérifier qu'elle existe
+    if (courseId) {
+      const course = await this.prisma.course.findUnique({
+        where: { id: courseId },
+      });
+
+      if (!course) {
+        throw new NotFoundException(`Course avec l'ID ${courseId} non trouvée`);
+      }
+
+      // Vérifier que le client ou le chauffeur correspondent à la course
+      if (createMessageDto.expediteurType === TypeExpediteur.CLIENT && 
+          course.clientId !== clientId) {
+        throw new Error('Ce client n\'est pas associé à cette course');
+      }
+
+      if (createMessageDto.expediteurType === TypeExpediteur.CHAUFFEUR && 
+          course.chauffeurId !== chauffeurId) {
+        throw new Error('Ce chauffeur n\'est pas associé à cette course');
+      }
+    }    // Créer le message    const message = await this.prisma.message.create({
+      data: createMessageDto,
+      include: {
+        client: true,
+        chauffeur: true,
+        reservation: true,
+        course: true,
+        transport: true,
+      },
+    });
+
+    // Créer une notification pour le destinataire
+    let destinataireId, destinataireType;
+    let titreNotif, messageNotif;
+
+    if (createMessageDto.expediteurType === TypeExpediteur.CLIENT) {
+      destinataireId = chauffeurId;
+      destinataireType = 'CHAUFFEUR';      const clientNom = message.client ? `${message.client.prenom} ${message.client.nom}` : 'Un client';
+      titreNotif = `Nouveau message de ${clientNom}`;
+      messageNotif = `${clientNom} vous a envoyé un message concernant ${reservationId ? 'votre réservation' : (transportId ? 'votre transport' : 'votre course')}`;
+    } else {
+      destinataireId = clientId;
+      destinataireType = 'CLIENT';
+      const chauffeurNom = message.chauffeur ? `${message.chauffeur.prenom} ${message.chauffeur.nom}` : 'Votre chauffeur';
+      titreNotif = `Nouveau message de ${chauffeurNom}`;
+      messageNotif = `${chauffeurNom} vous a envoyé un message concernant ${reservationId ? 'votre réservation' : (transportId ? 'votre transport' : 'votre course')}`;
+    }
+
+    if (destinataireType === 'CLIENT' && clientId) {
+      await this.notificationsService.create({
+        titre: titreNotif,
+        message: messageNotif,
+        type: TypeNotification.AUTRE,        clientId: clientId,
+        donnees: JSON.stringify({
+          messageId: message.id,
+          reservationId: reservationId,
+          courseId: courseId,
+          transportId: transportId,
+        }),
+      });
+    } else if (destinataireType === 'CHAUFFEUR' && chauffeurId) {
+      await this.notificationsService.create({
+        titre: titreNotif,
+        message: messageNotif,
+        type: TypeNotification.AUTRE, 
+        chauffeurId: chauffeurId,
+        donnees: JSON.stringify({
+          messageId: message.id,
+          reservationId: reservationId,
+          courseId: courseId,
+          transportId: transportId,
+        }),
+      });
+    }
+
+    return message;
+  }
+  async findAllForConversation(params: {
+    clientId?: number;
+    chauffeurId?: number;
+    reservationId?: number;
+    courseId?: number;
+    transportId?: number;
+    skip?: number;
+    take?: number;
+  }) {
+    const { clientId, chauffeurId, reservationId, courseId, transportId, skip, take } = params;
+    
+    const where: Prisma.MessageWhereInput = {};    // Récupérer les messages liés à une conversation
+    if (reservationId) {
+      where.reservationId = reservationId;
+    } else if (courseId) {
+      where.courseId = courseId;
+    } else if (transportId) {
+      where.transportId = transportId;
+    } else {
+      throw new Error('Vous devez fournir soit un ID de réservation, soit un ID de course, soit un ID de transport');
+    }// Si un clientId est fourni, s'assurer que c'est bien sa conversation
+    if (clientId) {
+      where.OR = [
+        { clientId },
+        { AND: [
+          { reservationId: { not: null } },
+          { reservation: { clientId } },
+        ]},
+        { AND: [
+          { courseId: { not: null } },
+          { course: { clientId } },
+        ]},
+        { AND: [
+          { Transport: { some: { clientId } } },
+        ]}
+      ];
+    }
+
+    // Si un chauffeurId est fourni, s'assurer que c'est bien sa conversation
+    if (chauffeurId) {
+      where.OR = [
+        { chauffeurId },
+        { AND: [
+          { courseId: { not: null } },
+          { course: { chauffeurId } },
+        ]},
+        { AND: [
+          { Transport: { some: { chauffeurId } } },
+        ]}
+      ];
+    }
+
+    const [items, count] = await Promise.all([
+      this.prisma.message.findMany({
+        where,
+        skip: skip || 0,
+        take: take || 50,
+        orderBy: { createdAt: 'asc' },
+        include: {
+          client: {
+            select: {
+              id: true,
+              nom: true,
+              prenom: true,
+              profileUrl: true,
+            },
+          },
+          chauffeur: {
+            select: {
+              id: true,
+              nom: true,
+              prenom: true,
+              photoUrl: true,
+            },
+          },
+        },
+      }),
+      this.prisma.message.count({ where }),
+    ]);
+
+    // Marquer tous les messages comme lus si un client ou chauffeur est fourni
+    if (clientId || chauffeurId) {
+      await this.markMessagesAsRead(items, clientId, chauffeurId);
+    }
+
+    return {
+      items,
+      meta: {
+        total: count,
+        skip: skip || 0,
+        take: take || 50,
+      },
+    };
+  }
+
+  async markMessagesAsRead(messages: any[], clientId?: number, chauffeurId?: number) {
+    const unreadMessages = messages.filter(m => 
+      !m.lu && 
+      ((clientId && m.expediteurType === TypeExpediteur.CHAUFFEUR) || 
+       (chauffeurId && m.expediteurType === TypeExpediteur.CLIENT))
+    );
+
+    if (unreadMessages.length === 0) {
+      return;
+    }
+
+    const unreadIds = unreadMessages.map(m => m.id);
+    await this.prisma.message.updateMany({
+      where: {
+        id: { in: unreadIds },
+      },
+      data: {
+        lu: true,
+      },
+    });
+  }
+  async getConversationsForClient(clientId: number) {
+    // Récupérer les conversations issues des réservations
+    const reservations = await this.prisma.locationVehicule.findMany({
+      where: { clientId },
+      select: {
+        id: true,
+        vehiculeId: true,
+        vehicule: {
+          select: {
+            marque: true,
+            modele: true,
+            chauffeurs: {
+              select: {
+                id: true,
+                nom: true,
+                prenom: true,
+                photoUrl: true,
+              }
+            }
+          }
+        },
+        dateDebut: true,
+        dateFin: true,
+        status: true,
+        _count: {
+          select: {
+            Message: true,
+          }
+        }
+      },
+    });
+
+    // Récupérer les conversations issues des courses
+    const courses = await this.prisma.course.findMany({
+      where: { clientId },
+      select: {
+        id: true,
+        chauffeur: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            photoUrl: true,
+          }
+        },
+        startLocation: true,
+        endLocation: true,
+        startTime: true,
+        status: true,
+        _count: {
+          select: {
+            Message: true,
+          }
+        }
+      },
+    });
+
+    // Récupérer les conversations issues des transports
+    const transports = await this.prisma.transport.findMany({
+      where: { clientId },
+      select: {
+        id: true,
+        chauffeur: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            photoUrl: true,
+          }
+        },
+        adresseDepart: true,
+        adresseDestination: true,
+        dateReservation: true,
+        status: true,
+        _count: {
+          select: {
+            Message: true,
+          }
+        }
+      },
+    });
+
+    // Formater les données
+    const reservationConversations = reservations.map(r => ({
+      type: 'RESERVATION',
+      id: r.id,
+      vehicule: `${r.vehicule.marque} ${r.vehicule.modele}`,
+      chauffeur: r.vehicule.chauffeurs[0] ? {
+        id: r.vehicule.chauffeurs[0].id,
+        nom: `${r.vehicule.chauffeurs[0].prenom} ${r.vehicule.chauffeurs[0].nom}`,
+        photoUrl: r.vehicule.chauffeurs[0].photoUrl,
+      } : null,
+      dateDebut: r.dateDebut,
+      dateFin: r.dateFin,
+      status: r.status,
+      messageCount: r._count.Message,
+    }));
+
+    const courseConversations = courses.map(c => ({
+      type: 'COURSE',
+      id: c.id,
+      trajet: `${c.startLocation} → ${c.endLocation}`,
+      chauffeur: c.chauffeur ? {
+        id: c.chauffeur.id,
+        nom: `${c.chauffeur.prenom} ${c.chauffeur.nom}`,
+        photoUrl: c.chauffeur.photoUrl,
+      } : null,
+      date: c.startTime,
+      status: c.status,
+      messageCount: c._count.Message,
+    }));
+
+    const transportConversations = transports.map(t => ({
+      type: 'TRANSPORT',
+      id: t.id,
+      trajet: `${t.adresseDepart} → ${t.adresseDestination}`,
+      chauffeur: t.chauffeur ? {
+        id: t.chauffeur.id,
+        nom: `${t.chauffeur.prenom} ${t.chauffeur.nom}`,
+        photoUrl: t.chauffeur.photoUrl,
+      } : null,
+      date: t.dateReservation,
+      status: t.status,
+      messageCount: t._count.Message,
+    }));
+
+    return {
+      reservations: reservationConversations,
+      courses: courseConversations,
+      transports: transportConversations,
+    };
+  }
+  async getConversationsForChauffeur(chauffeurId: number) {
+    // Récupérer les conversations issues des courses
+    const courses = await this.prisma.course.findMany({
+      where: { chauffeurId },
+      select: {
+        id: true,
+        client: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            profileUrl: true,
+          }
+        },
+        startLocation: true,
+        endLocation: true,
+        startTime: true,
+        status: true,
+        _count: {
+          select: {
+            Message: true,
+          }
+        }
+      },
+    });
+
+    // Récupérer les conversations issues des transports
+    const transports = await this.prisma.transport.findMany({
+      where: { chauffeurId },
+      select: {
+        id: true,
+        client: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            profileUrl: true,
+          }
+        },
+        adresseDepart: true,
+        adresseDestination: true,
+        dateReservation: true,
+        status: true,
+        _count: {
+          select: {
+            Message: true,
+          }
+        }
+      },
+    });
+
+    // Récupérer les véhicules du chauffeur
+    const vehiculesIds = await this.prisma.vehicule.findMany({
+      where: {
+        chauffeurs: {
+          some: {
+            id: chauffeurId,
+          }
+        }
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    // Récupérer les réservations des véhicules du chauffeur
+    const reservations = await this.prisma.locationVehicule.findMany({
+      where: {
+        vehiculeId: {
+          in: vehiculesIds.map(v => v.id),
+        }
+      },
+      select: {
+        id: true,
+        client: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            profileUrl: true,
+          }
+        },
+        vehicule: {
+          select: {
+            id: true,
+            marque: true,
+            modele: true,
+          }
+        },
+        dateDebut: true,
+        dateFin: true,
+        status: true,
+        _count: {
+          select: {
+            Message: true,
+          }
+        }
+      },
+    });
+
+    // Formater les données
+    const courseConversations = courses.map(c => ({
+      type: 'COURSE',
+      id: c.id,
+      trajet: `${c.startLocation} → ${c.endLocation}`,
+      client: c.client ? {
+        id: c.client.id,
+        nom: `${c.client.prenom} ${c.client.nom}`,
+        profileUrl: c.client.profileUrl,
+      } : null,
+      date: c.startTime,
+      status: c.status,
+      messageCount: c._count.Message,
+    }));
+
+    const transportConversations = transports.map(t => ({
+      type: 'TRANSPORT',
+      id: t.id,
+      trajet: `${t.adresseDepart} → ${t.adresseDestination}`,
+      client: t.client ? {
+        id: t.client.id,
+        nom: `${t.client.prenom} ${t.client.nom}`,
+        profileUrl: t.client.profileUrl,
+      } : null,
+      date: t.dateReservation,
+      status: t.status,
+      messageCount: t._count.Message,
+    }));
+
+    const reservationConversations = reservations.map(r => ({
+      type: 'RESERVATION',
+      id: r.id,
+      vehicule: `${r.vehicule.marque} ${r.vehicule.modele}`,
+      client: r.client ? {
+        id: r.client.id,
+        nom: `${r.client.prenom} ${r.client.nom}`,
+        profileUrl: r.client.profileUrl,
+      } : null,
+      dateDebut: r.dateDebut,
+      dateFin: r.dateFin,
+      status: r.status,
+      messageCount: r._count.Message,
+    }));
+
+    return {
+      courses: courseConversations,
+      transports: transportConversations,
+      reservations: reservationConversations,
+    };
+  }
+  async findUnreadCount(clientId?: number, chauffeurId?: number) {
+    const where: Prisma.MessageWhereInput = {
+      lu: false,
+    };
+
+    if (clientId) {
+      where.expediteurType = TypeExpediteur.CHAUFFEUR;
+      where.OR = [
+        { clientId },
+        { AND: [
+          { reservationId: { not: null } },
+          { reservation: { clientId } },
+        ]},
+        { AND: [
+          { courseId: { not: null } },
+          { course: { clientId } },
+        ]},
+        { AND: [
+          { Transport: { some: { clientId } } },
+        ]}
+      ];
+    } else if (chauffeurId) {
+      where.expediteurType = TypeExpediteur.CLIENT;
+      where.OR = [
+        { chauffeurId },
+        { AND: [
+          { courseId: { not: null } },
+          { course: { chauffeurId } },
+        ]},
+        { AND: [
+          { Transport: { some: { chauffeurId } } },
+        ]}
+      ];
+    } else {
+      throw new Error('Vous devez fournir soit un ID de client soit un ID de chauffeur');
+    }
+
+    const count = await this.prisma.message.count({ where });
+    return { count };
+  }
+}
