@@ -17,7 +17,7 @@ class LoginDto {
 exports.LoginDto = LoginDto;
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: "admin@memagroup.com",
+        example: "admin@madamove.com",
         description: "Adresse email de l'utilisateur",
     }),
     (0, class_validator_1.IsEmail)({}, { message: "Veuillez fournir une adresse email valide" }),

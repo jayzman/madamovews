@@ -326,6 +326,7 @@ __decorate([
 ], TransportsController.prototype, "getTrackingStatistics", null);
 __decorate([
     (0, common_1.Patch)(":id/status"),
+    (0, skip_auth_decorator_1.SkipAuth)(),
     (0, swagger_1.ApiOperation)({ summary: "Mettre à jour le statut du transport" }),
     (0, swagger_1.ApiResponse)({ status: 200, description: "Statut mis à jour avec succès" }),
     (0, swagger_1.ApiResponse)({ status: 404, description: "Transport non trouvé" }),

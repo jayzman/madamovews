@@ -27,6 +27,7 @@ import { GlobalAuthGuard } from "./auth/guards/global-auth.guard";
 import { TransportsModule } from "./transports/transports.module";
 import { AdminMessagesModule } from "./admin-messages/admin-messages.module";
 import { PromoCodesModule } from './promo-codes/promo-codes.module';
+import { LivraisonModule } from "./livraison/livraison.module";
 
 @Module({
 imports: [
@@ -78,7 +79,8 @@ imports: [
   TransportsModule,
   AdminMessagesModule,
   SmsModule,
-  PromoCodesModule
+  PromoCodesModule,
+  LivraisonModule
 ], 
 providers: [
   MailService,

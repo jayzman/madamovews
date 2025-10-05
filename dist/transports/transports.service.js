@@ -214,7 +214,11 @@ let TransportsService = class TransportsService {
             console.log("successUrl", successUrl);
             console.log("cancelUrl", cancelUrl);
             return {
-                transport,
+                transport: {
+                    client,
+                    vehicule,
+                    ...transport,
+                },
                 paymentMethod,
                 setupUrl: setupSession.url,
                 sessionId: setupSession.id,

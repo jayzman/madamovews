@@ -86,7 +86,7 @@ class LoginDriverDto {
 exports.LoginDriverDto = LoginDriverDto;
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: "driver.mema@yopmail.com",
+        example: "driver.madamove@yopmail.com",
         description: "Adresse email du chauffeur",
     }),
     (0, class_validator_1.IsEmail)({}, { message: "Veuillez fournir une adresse email valide" }),

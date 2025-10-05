@@ -27,9 +27,9 @@ const client_jwt_auth_guard_1 = require("./guards/client-jwt-auth.guard");
 const skip_auth_decorator_1 = require("../auth/decorators/skip-auth.decorator");
 exports.clientStorage = {
     storage: (0, multer_1.diskStorage)({
-        destination: './uploads/photos/clients',
+        destination: "./uploads/photos/clients",
         filename: (req, file, callback) => {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+            const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
             const fileExtName = (0, path_1.extname)(file.originalname);
             callback(null, `${file.fieldname}-${uniqueSuffix}${fileExtName}`);
         },
@@ -93,8 +93,16 @@ let ClientsController = class ClientsController {
     async checkExistence(checkExistenceDto) {
         return this.clientsService.checkExistence(checkExistenceDto.email, checkExistenceDto.telephone);
     }
-    getProfile(req) {
-        return req.user;
+    async getProfile(req) {
+        if (!req.user || !req.user.id) {
+            console.log("User or user.id is missing, waiting...");
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            if (!req.user || !req.user.id) {
+                throw new common_1.UnauthorizedException("Utilisateur non authentifié ou ID manquant");
+            }
+        }
+        console.log("User validated:", req.user);
+        return this.clientsService.findOne(req.user.id);
     }
     findAll(skip, take, statut, ville, search) {
         const filters = {};
@@ -122,9 +130,11 @@ let ClientsController = class ClientsController {
     async getClientPhoto(id, res) {
         const client = await this.clientsService.findOne(Number(id));
         if (!client || !client.profileUrl) {
-            throw new common_1.NotFoundException('Client ou photo non trouvé.');
+            throw new common_1.NotFoundException("Client ou photo non trouvé.");
         }
-        return res.sendFile(client.profileUrl.replace('uploads/', ''), { root: 'uploads' });
+        return res.sendFile(client.profileUrl.replace("uploads/", ""), {
+            root: "uploads",
+        });
     }
     count() {
         return this.clientsService.count();
@@ -156,32 +166,35 @@ let ClientsController = class ClientsController {
 };
 exports.ClientsController = ClientsController;
 __decorate([
-    (0, common_1.Post)('with-photo'),
+    (0, common_1.Post)("with-photo"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer un nouveau client avec upload de photo' }),
-    (0, swagger_1.ApiConsumes)('multipart/form-data'),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'Le client a été créé avec succès.' }),
+    (0, swagger_1.ApiOperation)({ summary: "Créer un nouveau client avec upload de photo" }),
+    (0, swagger_1.ApiConsumes)("multipart/form-data"),
+    (0, swagger_1.ApiResponse)({
+        status: 201,
+        description: "Le client a été créé avec succès.",
+    }),
     (0, swagger_1.ApiBody)({
         schema: {
-            type: 'object',
+            type: "object",
             properties: {
                 file: {
-                    type: 'string',
-                    format: 'binary',
-                    description: 'Fichier image à uploader',
+                    type: "string",
+                    format: "binary",
+                    description: "Fichier image à uploader",
                 },
-                nom: { type: 'string', description: 'Nom du client' },
-                prenom: { type: 'string', description: 'Prénom du client' },
-                email: { type: 'string', description: 'Email du client' },
-                telephone: { type: 'string', description: 'Téléphone du client' },
-                adresse: { type: 'string', description: 'Adresse du client' },
-                ville: { type: 'string', description: 'Ville du client' },
-                preferences: { type: 'string', description: 'Préférences du client' },
+                nom: { type: "string", description: "Nom du client" },
+                prenom: { type: "string", description: "Prénom du client" },
+                email: { type: "string", description: "Email du client" },
+                telephone: { type: "string", description: "Téléphone du client" },
+                adresse: { type: "string", description: "Adresse du client" },
+                ville: { type: "string", description: "Ville du client" },
+                preferences: { type: "string", description: "Préférences du client" },
             },
-            required: ['nom', 'prenom', 'email', 'telephone', 'ville'],
+            required: ["nom", "prenom", "email", "telephone", "ville"],
         },
     }),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', exports.clientStorage)),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)("file", exports.clientStorage)),
     __param(0, (0, common_1.UploadedFile)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -191,168 +204,189 @@ __decorate([
 __decorate([
     (0, common_1.Post)(),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Créer un nouveau client' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'Client créé avec succès' }),
+    (0, swagger_1.ApiOperation)({ summary: "Créer un nouveau client" }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: "Client créé avec succès" }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_client_dto_1.CreateClientDto]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "create", null);
 __decorate([
-    (0, common_1.Post)('/message'),
+    (0, common_1.Post)("/message"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'envoyer un email à un client' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'message envoyer' }),
+    (0, swagger_1.ApiOperation)({ summary: "envoyer un email à un client" }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: "message envoyer" }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_client_dto_1.SendEmailDto]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "message", null);
 __decorate([
-    (0, common_1.Post)('/register'),
+    (0, common_1.Post)("/register"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Enregistrer un nouveau client' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'Client enregistré avec succès' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Un client avec cet email existe déjà' }),
+    (0, swagger_1.ApiOperation)({ summary: "Enregistrer un nouveau client" }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: "Client enregistré avec succès" }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: "Un client avec cet email existe déjà",
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_client_dto_1.RegisterClientDto]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "register", null);
 __decorate([
-    (0, common_1.Post)('/register-sms'),
+    (0, common_1.Post)("/register-sms"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Inscription d\'un client via SMS' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'Client inscrit avec succès via SMS' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Numéro de téléphone déjà utilisé' }),
+    (0, swagger_1.ApiOperation)({ summary: "Inscription d'un client via SMS" }),
+    (0, swagger_1.ApiResponse)({
+        status: 201,
+        description: "Client inscrit avec succès via SMS",
+    }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: "Numéro de téléphone déjà utilisé" }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_client_dto_1.RegisterClientBySmsDto]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "registerBySms", null);
 __decorate([
-    (0, common_1.Post)('/send-otp'),
+    (0, common_1.Post)("/send-otp"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Envoyer un code OTP pour connexion client' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Code OTP envoyé avec succès' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Client non trouvé' }),
+    (0, swagger_1.ApiOperation)({ summary: "Envoyer un code OTP pour connexion client" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Code OTP envoyé avec succès" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_client_dto_1.SendOtpClientDto]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "sendOtpClient", null);
 __decorate([
-    (0, common_1.Post)('/verify-otp'),
+    (0, common_1.Post)("/verify-otp"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Vérifier le code OTP et se connecter' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Connexion réussie via OTP' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Code OTP invalide ou expiré' }),
+    (0, swagger_1.ApiOperation)({ summary: "Vérifier le code OTP et se connecter" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Connexion réussie via OTP" }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: "Code OTP invalide ou expiré" }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_client_dto_1.VerifyOtpClientDto]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "verifyOtpClient", null);
 __decorate([
-    (0, common_1.Post)('/login-sms'),
+    (0, common_1.Post)("/login-sms"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Connexion directe client via SMS avec OTP' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Connexion réussie via SMS' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Code OTP invalide ou client non trouvé' }),
+    (0, swagger_1.ApiOperation)({ summary: "Connexion directe client via SMS avec OTP" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Connexion réussie via SMS" }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: "Code OTP invalide ou client non trouvé",
+    }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_client_dto_1.LoginClientBySmsDto]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "loginBySms", null);
 __decorate([
-    (0, common_1.Post)('/resend-otp'),
+    (0, common_1.Post)("/resend-otp"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Renvoyer un nouveau code OTP pour client' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Nouveau code OTP envoyé' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Client non trouvé' }),
+    (0, swagger_1.ApiOperation)({ summary: "Renvoyer un nouveau code OTP pour client" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Nouveau code OTP envoyé" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_client_dto_1.SendOtpClientDto]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "resendOtpClient", null);
 __decorate([
-    (0, common_1.Post)('/send-custom-sms'),
-    (0, swagger_1.ApiOperation)({ summary: 'Envoyer un SMS personnalisé aux clients' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'SMS envoyé avec succès' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Erreur lors de l\'envoi du SMS' }),
+    (0, common_1.Post)("/send-custom-sms"),
+    (0, swagger_1.ApiOperation)({ summary: "Envoyer un SMS personnalisé aux clients" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "SMS envoyé avec succès" }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: "Erreur lors de l'envoi du SMS" }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_client_dto_1.SendCustomSmsClientDto]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "sendCustomSmsClient", null);
 __decorate([
-    (0, common_1.Post)('/sms'),
+    (0, common_1.Post)("/sms"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'envoyer un sms à un client' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'message envoyer' }),
+    (0, swagger_1.ApiOperation)({ summary: "envoyer un sms à un client" }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: "message envoyer" }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_client_dto_1.SendSmsDto]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "sms", null);
 __decorate([
-    (0, common_1.Post)('/verify-email'),
+    (0, common_1.Post)("/verify-email"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Vérifier l\'email d\'un client avec un OTP' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Email vérifié avec succès' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Client non trouvé' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Code de validation incorrect' }),
+    (0, swagger_1.ApiOperation)({ summary: "Vérifier l'email d'un client avec un OTP" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Email vérifié avec succès" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: "Code de validation incorrect" }),
     (0, swagger_1.ApiBody)({
         schema: {
-            type: 'object',
+            type: "object",
             properties: {
-                email: { type: 'string', description: 'Email du client' },
-                otp: { type: 'string', description: 'Code OTP envoyé au client' },
+                email: { type: "string", description: "Email du client" },
+                otp: { type: "string", description: "Code OTP envoyé au client" },
             },
-            required: ['email', 'otp'],
-        }
+            required: ["email", "otp"],
+        },
     }),
-    __param(0, (0, common_1.Body)('email')),
-    __param(1, (0, common_1.Body)('otp')),
+    __param(0, (0, common_1.Body)("email")),
+    __param(1, (0, common_1.Body)("otp")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "verifyEmail", null);
 __decorate([
-    (0, common_1.Post)('/login'),
+    (0, common_1.Post)("/login"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Connexion client' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Connexion réussie' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Client non trouvé' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Email ou mot de passe incorrect' }),
+    (0, swagger_1.ApiOperation)({ summary: "Connexion client" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Connexion réussie" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: "Email ou mot de passe incorrect" }),
     (0, swagger_1.ApiBody)({
         schema: {
-            type: 'object',
+            type: "object",
             properties: {
-                email: { type: 'string', description: 'Email du client', example: 'jean.dupont@yopmail.com' },
-                password: { type: 'string', description: 'Mot de passe du client', example: 'MotDePasse123!' },
+                email: {
+                    type: "string",
+                    description: "Email du client",
+                    example: "jean.dupont@yopmail.com",
+                },
+                password: {
+                    type: "string",
+                    description: "Mot de passe du client",
+                    example: "MotDePasse123!",
+                },
             },
-            required: ['email', 'password'],
+            required: ["email", "password"],
         },
     }),
-    __param(0, (0, common_1.Body)('email')),
-    __param(1, (0, common_1.Body)('password')),
+    __param(0, (0, common_1.Body)("email")),
+    __param(1, (0, common_1.Body)("password")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "login", null);
 __decorate([
-    (0, common_1.Post)('/forgot-password'),
+    (0, common_1.Post)("/forgot-password"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Demande de réinitialisation de mot de passe' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Email de réinitialisation envoyé' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Client non trouvé' }),
+    (0, swagger_1.ApiOperation)({ summary: "Demande de réinitialisation de mot de passe" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Email de réinitialisation envoyé" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
     (0, swagger_1.ApiBody)({
         schema: {
-            type: 'object',
+            type: "object",
             properties: {
-                email: { type: 'string', description: 'Email du client', example: 'jean.dupont@example.com' },
+                email: {
+                    type: "string",
+                    description: "Email du client",
+                    example: "jean.dupont@example.com",
+                },
             },
-            required: ['email'],
+            required: ["email"],
         },
     }),
     __param(0, (0, common_1.Body)()),
@@ -361,21 +395,36 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "forgotPassword", null);
 __decorate([
-    (0, common_1.Post)('/reset-password'),
+    (0, common_1.Post)("/reset-password"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Réinitialisation du mot de passe avec code' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Mot de passe réinitialisé avec succès' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Client non trouvé' }),
-    (0, swagger_1.ApiResponse)({ status: 401, description: 'Code incorrect ou expiré' }),
+    (0, swagger_1.ApiOperation)({ summary: "Réinitialisation du mot de passe avec code" }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: "Mot de passe réinitialisé avec succès",
+    }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: "Code incorrect ou expiré" }),
     (0, swagger_1.ApiBody)({
         schema: {
-            type: 'object',
+            type: "object",
             properties: {
-                email: { type: 'string', description: 'Email du client', example: 'jean.dupont@example.com' },
-                resetCode: { type: 'string', description: 'Code de réinitialisation', example: '123456' },
-                password: { type: 'string', description: 'Nouveau mot de passe', example: 'NouveauMotDePasse123!' },
+                email: {
+                    type: "string",
+                    description: "Email du client",
+                    example: "jean.dupont@example.com",
+                },
+                resetCode: {
+                    type: "string",
+                    description: "Code de réinitialisation",
+                    example: "123456",
+                },
+                password: {
+                    type: "string",
+                    description: "Nouveau mot de passe",
+                    example: "NouveauMotDePasse123!",
+                },
             },
-            required: ['email', 'resetCode', 'password'],
+            required: ["email", "resetCode", "password"],
         },
     }),
     __param(0, (0, common_1.Body)()),
@@ -384,40 +433,58 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "resetPassword", null);
 __decorate([
-    (0, common_1.Post)('/resend-confirmation-email'),
+    (0, common_1.Post)("/resend-confirmation-email"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Renvoyer un email de confirmation d\'inscription' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Email de confirmation renvoyé avec succès' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Client non trouvé' }),
-    (0, swagger_1.ApiResponse)({ status: 406, description: 'Le compte est déjà vérifié' }),
+    (0, swagger_1.ApiOperation)({ summary: "Renvoyer un email de confirmation d'inscription" }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: "Email de confirmation renvoyé avec succès",
+    }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
+    (0, swagger_1.ApiResponse)({ status: 406, description: "Le compte est déjà vérifié" }),
     (0, swagger_1.ApiBody)({
         schema: {
-            type: 'object',
+            type: "object",
             properties: {
-                email: { type: 'string', description: 'Email du client', example: 'jean.dupont@example.com' },
+                email: {
+                    type: "string",
+                    description: "Email du client",
+                    example: "jean.dupont@example.com",
+                },
             },
-            required: ['email'],
+            required: ["email"],
         },
     }),
-    __param(0, (0, common_1.Body)('email')),
+    __param(0, (0, common_1.Body)("email")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "resendConfirmationEmail", null);
 __decorate([
-    (0, common_1.Post)('/check-existence'),
+    (0, common_1.Post)("/check-existence"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Vérifier l\'existence d\'un email ou téléphone client' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Vérification effectuée avec succès' }),
-    (0, swagger_1.ApiResponse)({ status: 406, description: 'Veuillez fournir un email ou un numéro de téléphone' }),
+    (0, swagger_1.ApiOperation)({
+        summary: "Vérifier l'existence d'un email ou téléphone client",
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: "Vérification effectuée avec succès",
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 406,
+        description: "Veuillez fournir un email ou un numéro de téléphone",
+    }),
     (0, swagger_1.ApiBody)({
         schema: {
-            type: 'object',
+            type: "object",
             properties: {
-                email: { type: 'string', description: 'Email du client à vérifier' },
-                telephone: { type: 'string', description: 'Téléphone du client à vérifier' },
+                email: { type: "string", description: "Email du client à vérifier" },
+                telephone: {
+                    type: "string",
+                    description: "Téléphone du client à vérifier",
+                },
             },
-            description: 'Au moins un des champs doit être fourni'
+            description: "Au moins un des champs doit être fourni",
         },
     }),
     __param(0, (0, common_1.Body)()),
@@ -426,58 +493,84 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "checkExistence", null);
 __decorate([
-    (0, common_1.Get)('me'),
+    (0, common_1.Get)("me"),
     (0, common_1.UseGuards)(client_jwt_auth_guard_1.ClientJwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: 'Récupérer le profil du client connecté' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Profil récupéré avec succès' }),
-    (0, swagger_1.ApiResponse)({ status: 401, description: 'Non autorisé' }),
+    (0, swagger_1.ApiOperation)({ summary: "Récupérer le profil du client connecté" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Profil récupéré avec succès" }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: "Non autorisé" }),
     (0, swagger_1.ApiBearerAuth)(),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "getProfile", null);
 __decorate([
     (0, common_1.Get)(),
     (0, swagger_1.ApiOperation)({ summary: "Récupérer tous les clients" }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: "Liste des clients récupérée avec succès" }),
-    (0, swagger_1.ApiQuery)({ name: 'skip', required: false, description: 'Nombre d\'enregistrements à ignorer' }),
-    (0, swagger_1.ApiQuery)({ name: 'take', required: false, description: 'Nombre d\'enregistrements à récupérer' }),
-    (0, swagger_1.ApiQuery)({ name: 'statut', required: false, description: 'Filtrer par statut du client' }),
-    (0, swagger_1.ApiQuery)({ name: 'ville', required: false, description: 'Filtrer par ville du client' }),
-    (0, swagger_1.ApiQuery)({ name: 'search', required: false, description: 'Rechercher par nom, prénom, email ou téléphone' }),
-    __param(0, (0, common_1.Query)('skip')),
-    __param(1, (0, common_1.Query)('take')),
-    __param(2, (0, common_1.Query)('statut')),
-    __param(3, (0, common_1.Query)('ville')),
-    __param(4, (0, common_1.Query)('search')),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: "Liste des clients récupérée avec succès",
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: "skip",
+        required: false,
+        description: "Nombre d'enregistrements à ignorer",
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: "take",
+        required: false,
+        description: "Nombre d'enregistrements à récupérer",
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: "statut",
+        required: false,
+        description: "Filtrer par statut du client",
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: "ville",
+        required: false,
+        description: "Filtrer par ville du client",
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: "search",
+        required: false,
+        description: "Rechercher par nom, prénom, email ou téléphone",
+    }),
+    __param(0, (0, common_1.Query)("skip")),
+    __param(1, (0, common_1.Query)("take")),
+    __param(2, (0, common_1.Query)("statut")),
+    __param(3, (0, common_1.Query)("ville")),
+    __param(4, (0, common_1.Query)("search")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)(':id/photo'),
+    (0, common_1.Get)(":id/photo"),
     (0, skip_auth_decorator_1.SkipAuth)(),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)("id")),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "getClientPhoto", null);
 __decorate([
-    (0, common_1.Get)('count'),
-    (0, swagger_1.ApiOperation)({ summary: 'Compter le nombre de clients' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Nombre de clients récupéré avec succès' }),
+    (0, common_1.Get)("count"),
+    (0, swagger_1.ApiOperation)({ summary: "Compter le nombre de clients" }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: "Nombre de clients récupéré avec succès",
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "count", null);
 __decorate([
-    (0, common_1.Get)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Récupérer un client par son ID' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Client récupéré avec succès' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Client non trouvé' }),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)(":id"),
+    (0, swagger_1.ApiOperation)({ summary: "Récupérer un client par son ID" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Client récupéré avec succès" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
+    __param(0, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
@@ -487,7 +580,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: "Mettre à jour un client" }),
     (0, swagger_1.ApiResponse)({ status: 200, description: "Client mis à jour avec succès" }),
     (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)("id")),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_client_dto_1.UpdateClientDto]),
@@ -498,76 +591,88 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: "Mettre à jour la photo de pofil d'un client" }),
     (0, swagger_1.ApiResponse)({ status: 200, description: "Client mis à jour avec succès" }),
     (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
-    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiConsumes)("multipart/form-data"),
     (0, swagger_1.ApiBody)({
         schema: {
-            type: 'object',
+            type: "object",
             properties: {
                 file: {
-                    type: 'string',
-                    format: 'binary',
-                    description: 'Fichier image à uploader',
+                    type: "string",
+                    format: "binary",
+                    description: "Fichier image à uploader",
                 },
             },
         },
     }),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', exports.clientStorage)),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)("file", exports.clientStorage)),
+    __param(0, (0, common_1.Param)("id")),
     __param(1, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "updateAvatar", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({ summary: 'Supprimer un client' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Client supprimé avec succès' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'Client non trouvé' }),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Delete)(":id"),
+    (0, swagger_1.ApiOperation)({ summary: "Supprimer un client" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: "Client supprimé avec succès" }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: "Client non trouvé" }),
+    __param(0, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], ClientsController.prototype, "remove", null);
 __decorate([
-    (0, common_1.Post)(':id/favorites'),
+    (0, common_1.Post)(":id/favorites"),
     (0, common_1.UseGuards)(client_jwt_auth_guard_1.ClientJwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: 'Ajouter une destination favorite pour un client' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'La destination favorite a été ajoutée avec succès.' }),
-    __param(0, (0, common_1.Param)('id')),
+    (0, swagger_1.ApiOperation)({ summary: "Ajouter une destination favorite pour un client" }),
+    (0, swagger_1.ApiResponse)({
+        status: 201,
+        description: "La destination favorite a été ajoutée avec succès.",
+    }),
+    __param(0, (0, common_1.Param)("id")),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, create_favorite_destination_dto_1.CreateFavoriteDestinationDto]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "addFavoriteDestination", null);
 __decorate([
-    (0, common_1.Get)(':id/favorites'),
+    (0, common_1.Get)(":id/favorites"),
     (0, common_1.UseGuards)(client_jwt_auth_guard_1.ClientJwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: 'Récupérer les destinations favorites d\'un client' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Liste des destinations favorites récupérée avec succès.' }),
-    __param(0, (0, common_1.Param)('id')),
+    (0, swagger_1.ApiOperation)({ summary: "Récupérer les destinations favorites d'un client" }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: "Liste des destinations favorites récupérée avec succès.",
+    }),
+    __param(0, (0, common_1.Param)("id")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "getFavoriteDestinations", null);
 __decorate([
-    (0, common_1.Patch)(':id/favorites/:favoriteId'),
+    (0, common_1.Patch)(":id/favorites/:favoriteId"),
     (0, common_1.UseGuards)(client_jwt_auth_guard_1.ClientJwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: 'Mettre à jour une destination favorite' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'La destination favorite a été mise à jour avec succès.' }),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Param)('favoriteId')),
+    (0, swagger_1.ApiOperation)({ summary: "Mettre à jour une destination favorite" }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: "La destination favorite a été mise à jour avec succès.",
+    }),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Param)("favoriteId")),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String, update_favorite_destination_dto_1.UpdateFavoriteDestinationDto]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "updateFavoriteDestination", null);
 __decorate([
-    (0, common_1.Delete)(':id/favorites/:favoriteId'),
+    (0, common_1.Delete)(":id/favorites/:favoriteId"),
     (0, common_1.UseGuards)(client_jwt_auth_guard_1.ClientJwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: 'Supprimer une destination favorite' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'La destination favorite a été supprimée avec succès.' }),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Param)('favoriteId')),
+    (0, swagger_1.ApiOperation)({ summary: "Supprimer une destination favorite" }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: "La destination favorite a été supprimée avec succès.",
+    }),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Param)("favoriteId")),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)

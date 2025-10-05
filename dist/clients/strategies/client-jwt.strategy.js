@@ -29,7 +29,7 @@ let ClientJwtStrategy = class ClientJwtStrategy extends (0, passport_1.PassportS
                 },
             ]),
             ignoreExpiration: false,
-            secretOrKey: process.env.JWT_SECRET_CLIENT || "mema_group_client",
+            secretOrKey: process.env.JWT_SECRET_CLIENT || "madamove_client",
         });
         this.configService = configService;
         this.prisma = prisma;

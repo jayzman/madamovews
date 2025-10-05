@@ -63,6 +63,9 @@ model Chauffeur {
   smsOtp        String?
   smsOtpExpiry  DateTime?
   phoneVerified Boolean?  @default(false)
+
+  // Ajout pour la relation avec LivraisonColis
+  livraisons      LivraisonColis[]
 }
 
 enum StatutChauffeur {
@@ -180,6 +183,9 @@ model Client {
   Notification Notification[]
   Message      Message[]
   Transport    Transport[]
+
+  // Ajout pour la relation avec LivraisonColis
+  livraisons      LivraisonColis[]
 }
 
 enum StatutClient {
@@ -525,4 +531,40 @@ model PromoCode {
 
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+}
+
+model LivraisonColis {
+  id                Int               @id @default(autoincrement())
+  codeLivraison     String            @unique // Code unique pour identifier la livraison
+  expediteurId      Int
+  expediteur        Client            @relation(fields: [expediteurId], references: [id]) // Référence au client expéditeur
+  adresseRamassage  String            // Adresse de ramassage
+  destinataireNom   String            // Nom du destinataire
+  destinataireTel   String            // Téléphone du destinataire
+  destinataireAdresse String          // Adresse complète du destinataire
+  colisDescription  String?           // Description du colis
+  poids             Float             // Poids du colis en kg
+  dimensions        String?           // Dimensions du colis (ex: "30x20x15 cm")
+  statut            StatutLivraison   @default(EN_ATTENTE) // Statut de la livraison
+  chauffeurId       Int?              // Chauffeur assigné pour la livraison
+  chauffeur         Chauffeur?        @relation(fields: [chauffeurId], references: [id])
+  dateCreation      DateTime          @default(now()) // Date de création de la livraison
+  dateLivraison     DateTime?         // Date prévue ou réelle de livraison
+  prix              Float             // Prix de la livraison
+  paiementStatut    StatutPaiement    @default(EN_ATTENTE) // Statut du paiement
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+}
+
+enum StatutLivraison {
+  EN_ATTENTE       // En attente de traitement
+  EN_COURS         // Livraison en cours
+  LIVREE           // Livraison terminée
+  ANNULEE          // Livraison annulée
+}
+
+enum StatutPaiement {
+  EN_ATTENTE       // Paiement en attente
+  PAYE             // Paiement effectué
+  REFUSE           // Paiement refusé
 }

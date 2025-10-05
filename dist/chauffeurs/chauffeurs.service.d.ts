@@ -229,12 +229,12 @@ export declare class ChauffeursService {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            chauffeurId: number;
-            status: string;
             fichier: string;
             mimeType: string;
             taille: number;
             dateExpiration: Date | null;
+            chauffeurId: number;
+            status: string;
         }[];
         credits: {
             id: number;
@@ -391,12 +391,12 @@ export declare class ChauffeursService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }[]>;
     getDocument(chauffeurId: number, documentId: number): Promise<{
         type: import(".prisma/client").$Enums.TypeDocument;
@@ -404,12 +404,12 @@ export declare class ChauffeursService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     addDocument(chauffeurId: number, createDocumentDto: CreateDocumentDto): Promise<{
         type: import(".prisma/client").$Enums.TypeDocument;
@@ -417,12 +417,12 @@ export declare class ChauffeursService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     updateDocument(chauffeurId: number, documentId: number, updateDocumentDto: Partial<CreateDocumentDto>): Promise<{
         type: import(".prisma/client").$Enums.TypeDocument;
@@ -430,12 +430,12 @@ export declare class ChauffeursService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     updateDocumentWithFile(chauffeurId: number, documentId: number, updateDocumentDto: Partial<CreateDocumentDto>): Promise<{
         type: import(".prisma/client").$Enums.TypeDocument;
@@ -443,12 +443,12 @@ export declare class ChauffeursService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     removeDocument(chauffeurId: number, documentId: number): Promise<{
         type: import(".prisma/client").$Enums.TypeDocument;
@@ -456,12 +456,12 @@ export declare class ChauffeursService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     updateDocumentStatus(chauffeurId: number, documentId: number, status: string): Promise<{
         type: import(".prisma/client").$Enums.TypeDocument;
@@ -469,12 +469,12 @@ export declare class ChauffeursService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     getCourses(params: {
         skip?: number;

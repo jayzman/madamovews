@@ -12,9 +12,9 @@ export declare class NotificationsService {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     findAll(skip?: number, take?: number): Promise<{
         items: {
@@ -26,9 +26,9 @@ export declare class NotificationsService {
             chauffeurId: number | null;
             clientId: number | null;
             titre: string;
-            lu: boolean;
             userId: number | null;
             donnees: string | null;
+            lu: boolean;
         }[];
         meta: {
             total: number;
@@ -46,9 +46,9 @@ export declare class NotificationsService {
             chauffeurId: number | null;
             clientId: number | null;
             titre: string;
-            lu: boolean;
             userId: number | null;
             donnees: string | null;
+            lu: boolean;
         }[];
         meta: {
             total: number;
@@ -66,9 +66,9 @@ export declare class NotificationsService {
             chauffeurId: number | null;
             clientId: number | null;
             titre: string;
-            lu: boolean;
             userId: number | null;
             donnees: string | null;
+            lu: boolean;
         }[];
         meta: {
             total: number;
@@ -86,9 +86,9 @@ export declare class NotificationsService {
             chauffeurId: number | null;
             clientId: number | null;
             titre: string;
-            lu: boolean;
             userId: number | null;
             donnees: string | null;
+            lu: boolean;
         }[];
         meta: {
             total: number;
@@ -105,9 +105,9 @@ export declare class NotificationsService {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     markAsRead(id: number): Promise<{
         message: string;
@@ -118,9 +118,9 @@ export declare class NotificationsService {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     markAllAsReadForUser(userId: number): Promise<import(".prisma/client").Prisma.BatchPayload>;
     markAllAsReadForChauffeur(chauffeurId: number): Promise<import(".prisma/client").Prisma.BatchPayload>;
@@ -134,9 +134,9 @@ export declare class NotificationsService {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     createPaymentSuccessNotification(clientId: number, montant: number, reference: string): Promise<{
         message: string;
@@ -147,9 +147,9 @@ export declare class NotificationsService {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     createCardAddedNotification(clientId: number, lastDigits: string): Promise<{
         message: string;
@@ -160,9 +160,9 @@ export declare class NotificationsService {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     createReservationStatusNotification(clientId: number, chauffeurId: number | null, locationId: number, newStatus: string, details: string): Promise<void>;
     createSpecialOfferNotification(clientIds: number[] | null, chauffeurIds: number[] | null, titre: string, message: string, offreDetails: any): Promise<any[]>;
@@ -175,9 +175,9 @@ export declare class NotificationsService {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     private getStatusLabel;
 }

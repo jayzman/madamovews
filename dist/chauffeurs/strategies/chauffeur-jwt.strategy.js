@@ -29,7 +29,7 @@ let ChauffeurJwtStrategy = class ChauffeurJwtStrategy extends (0, passport_1.Pas
                 },
             ]),
             ignoreExpiration: false,
-            secretOrKey: process.env.JWT_SECRET_CHAUFFEUR || "mema_group_chauffeur",
+            secretOrKey: process.env.JWT_SECRET_CHAUFFEUR || "madamove_chauffeur",
         });
         this.configService = configService;
         this.prisma = prisma;

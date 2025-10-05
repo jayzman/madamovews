@@ -81,7 +81,7 @@ let SmsService = class SmsService {
             otp,
             expiresAt
         });
-        const message = `Votre code de vérification MEMA est: ${otp}. Ce code expire dans 5 minutes.`;
+        const message = `Votre code de vérification MADAMOVE est: ${otp}. Ce code expire dans 5 minutes.`;
         await this.sendSms(phoneNumber, message);
         return otp;
     }

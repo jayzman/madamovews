@@ -36,6 +36,7 @@ const global_auth_guard_1 = require("./auth/guards/global-auth.guard");
 const transports_module_1 = require("./transports/transports.module");
 const admin_messages_module_1 = require("./admin-messages/admin-messages.module");
 const promo_codes_module_1 = require("./promo-codes/promo-codes.module");
+const livraison_module_1 = require("./livraison/livraison.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -90,7 +91,8 @@ exports.AppModule = AppModule = __decorate([
             transports_module_1.TransportsModule,
             admin_messages_module_1.AdminMessagesModule,
             sms_module_1.SmsModule,
-            promo_codes_module_1.PromoCodesModule
+            promo_codes_module_1.PromoCodesModule,
+            livraison_module_1.LivraisonModule
         ],
         providers: [
             email_service_1.MailService,

@@ -30,7 +30,7 @@ let ChauffeursService = class ChauffeursService {
         const temporaryPassword = Math.random().toString(36).slice(-8);
         await this.emailService.sendEmail({
             to: chauffeurData.email,
-            subject: "Bienvenue sur MEMA - Vos identifiants de connexion",
+            subject: "Bienvenue sur MADAMOVE - Vos identifiants de connexion",
             template: path.join(process.cwd(), "src/templates/invitationDriver.hbs"),
         }, {
             name: chauffeurData.nom,
@@ -78,7 +78,7 @@ let ChauffeursService = class ChauffeursService {
             email: chauffeur.email,
         }, {
             expiresIn: "7d",
-            secret: process.env.JWT_SECRET_DRIVER || "mema_group_driver",
+            secret: process.env.JWT_SECRET_DRIVER || "madamove_driver",
         });
         const { password: _, ...chauffeurWithoutPassword } = chauffeur;
         return {
@@ -666,7 +666,7 @@ let ChauffeursService = class ChauffeursService {
                 credits: true,
             },
         });
-        const welcomeMessage = `Bienvenue ${chauffeurData.nom} ! Votre compte chauffeur MEMA a été créé avec succès. Vous pouvez maintenant vous connecter en utilisant votre numéro de téléphone.`;
+        const welcomeMessage = `Bienvenue ${chauffeurData.nom} ! Votre compte chauffeur MADAMOVE a été créé avec succès. Vous pouvez maintenant vous connecter en utilisant votre numéro de téléphone.`;
         await this.smsService.sendSms(telephone, welcomeMessage);
         return chauffeur;
     }
@@ -703,7 +703,7 @@ let ChauffeursService = class ChauffeursService {
             telephone: chauffeur.telephone,
         }, {
             expiresIn: "7d",
-            secret: process.env.JWT_SECRET_DRIVER || "mema_group_driver",
+            secret: process.env.JWT_SECRET_DRIVER || "madamove_driver",
         });
         const { password, ...chauffeurWithoutPassword } = chauffeur;
         return {

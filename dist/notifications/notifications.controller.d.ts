@@ -12,9 +12,9 @@ export declare class NotificationsController {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     findAll(skip?: string, take?: string): Promise<{
         items: {
@@ -26,9 +26,9 @@ export declare class NotificationsController {
             chauffeurId: number | null;
             clientId: number | null;
             titre: string;
-            lu: boolean;
             userId: number | null;
             donnees: string | null;
+            lu: boolean;
         }[];
         meta: {
             total: number;
@@ -46,9 +46,9 @@ export declare class NotificationsController {
             chauffeurId: number | null;
             clientId: number | null;
             titre: string;
-            lu: boolean;
             userId: number | null;
             donnees: string | null;
+            lu: boolean;
         }[];
         meta: {
             total: number;
@@ -66,9 +66,9 @@ export declare class NotificationsController {
             chauffeurId: number | null;
             clientId: number | null;
             titre: string;
-            lu: boolean;
             userId: number | null;
             donnees: string | null;
+            lu: boolean;
         }[];
         meta: {
             total: number;
@@ -86,9 +86,9 @@ export declare class NotificationsController {
             chauffeurId: number | null;
             clientId: number | null;
             titre: string;
-            lu: boolean;
             userId: number | null;
             donnees: string | null;
+            lu: boolean;
         }[];
         meta: {
             total: number;
@@ -105,9 +105,9 @@ export declare class NotificationsController {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     markAsRead(id: number): Promise<{
         message: string;
@@ -118,9 +118,9 @@ export declare class NotificationsController {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     markAllAsReadForUser(userId: number): Promise<import(".prisma/client").Prisma.BatchPayload>;
     markAllAsReadForChauffeur(chauffeurId: number): Promise<import(".prisma/client").Prisma.BatchPayload>;
@@ -134,9 +134,9 @@ export declare class NotificationsController {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
     createSpecialOffer(data: {
         clientIds?: number[];
@@ -161,8 +161,8 @@ export declare class NotificationsController {
         chauffeurId: number | null;
         clientId: number | null;
         titre: string;
-        lu: boolean;
         userId: number | null;
         donnees: string | null;
+        lu: boolean;
     }>;
 }

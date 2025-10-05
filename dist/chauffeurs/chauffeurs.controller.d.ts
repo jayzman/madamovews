@@ -410,12 +410,12 @@ export declare class ChauffeursController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            chauffeurId: number;
-            status: string;
             fichier: string;
             mimeType: string;
             taille: number;
             dateExpiration: Date | null;
+            chauffeurId: number;
+            status: string;
         }[];
         credits: {
             id: number;
@@ -575,12 +575,12 @@ export declare class ChauffeursController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }[]>;
     addDocument(id: string, file: Express.Multer.File, createDocumentDto: CreateDocumentDto): Promise<{
         type: import(".prisma/client").$Enums.TypeDocument;
@@ -588,12 +588,12 @@ export declare class ChauffeursController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     getDocument(id: string, documentId: string, res: Response): Promise<void>;
     removeDocument(id: string, documentId: string): Promise<{
@@ -602,12 +602,12 @@ export declare class ChauffeursController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     updateDocument(id: string, documentId: string, updateDocumentDto: Partial<CreateDocumentDto>): Promise<{
         type: import(".prisma/client").$Enums.TypeDocument;
@@ -615,12 +615,12 @@ export declare class ChauffeursController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     updateDocumentFile(id: string, documentId: string, file: Express.Multer.File, updateDocumentDto: Partial<CreateDocumentDto>): Promise<{
         type: import(".prisma/client").$Enums.TypeDocument;
@@ -628,12 +628,12 @@ export declare class ChauffeursController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     updateDocumentStatus(id: string, documentId: string, body: {
         status: string;
@@ -643,12 +643,12 @@ export declare class ChauffeursController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        chauffeurId: number;
-        status: string;
         fichier: string;
         mimeType: string;
         taille: number;
         dateExpiration: Date | null;
+        chauffeurId: number;
+        status: string;
     }>;
     getCourses(id: string, skip?: string, take?: string, status?: string, dateDebut?: string, dateFin?: string): Promise<({
         client: {

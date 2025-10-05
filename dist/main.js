@@ -11,7 +11,7 @@ const bodyParser = require("body-parser");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.enableCors({
-        origin: ['http://51.68.154.110', 'http://localhost:3001', 'http://localhost:3000', 'https://backmemangatech.com', 'https://api.backmemangatech.com', 'file://'],
+        origin: ['http://51.68.154.110', 'http://localhost:3001', 'http://localhost:3000', 'https://madamove.fr', 'https://api.madamove.fr', 'file://'],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'stripe-signature'],
@@ -36,7 +36,7 @@ async function bootstrap() {
     }));
     app.setGlobalPrefix("api");
     const config = new swagger_1.DocumentBuilder()
-        .setTitle("Mema Group API")
+        .setTitle("MADAMOVE API")
         .setDescription("API pour la gestion des chauffeurs, véhicules et courses")
         .setVersion("1.0")
         .addBearerAuth({ in: 'header', type: 'http' })

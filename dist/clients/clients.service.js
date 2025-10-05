@@ -41,7 +41,7 @@ let ClientsService = class ClientsService {
             where: { email },
         });
         if (existingClient) {
-            throw new Error('Un client avec cet email existe déjà.');
+            throw new Error("Un client avec cet email existe déjà.");
         }
         const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
         const validationCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -56,8 +56,8 @@ let ClientsService = class ClientsService {
         });
         await this.emailService.sendEmail({
             to: email,
-            subject: 'Confirmation de votre inscription',
-            template: path.join(process.cwd(), 'src/templates/confirmRegistration.hbs'),
+            subject: "Confirmation de votre inscription",
+            template: path.join(process.cwd(), "src/templates/confirmRegistration.hbs"),
         }, {
             clientName: `${details.nom} ${details.prenom}`,
             validationCode,
@@ -73,7 +73,7 @@ let ClientsService = class ClientsService {
             throw new common_1.NotFoundException(`Client avec l'email ${email} non trouvé`);
         }
         if (client.validationCode !== otp) {
-            throw new Error('Le code de validation est incorrect.');
+            throw new Error("Le code de validation est incorrect.");
         }
         const updatedClient = await this.prisma.client.update({
             where: { email },
@@ -84,10 +84,10 @@ let ClientsService = class ClientsService {
         });
         const token = this.jwtService.sign({
             sub: updatedClient.id,
-            email: updatedClient.email
+            email: updatedClient.email,
         }, {
-            expiresIn: '7d',
-            secret: process.env.JWT_SECRET_CLIENT || "mema_group_client"
+            expiresIn: "7d",
+            secret: process.env.JWT_SECRET_CLIENT || "madamove_client",
         });
         const { password, validationCode, ...clientData } = updatedClient;
         return { token, client: clientData };
@@ -100,7 +100,7 @@ let ClientsService = class ClientsService {
             throw new common_1.NotFoundException(`Client avec l'email ${email} non trouvé`);
         }
         if (client.verified) {
-            throw new common_1.NotAcceptableException('Le compte client est déjà vérifié.');
+            throw new common_1.NotAcceptableException("Le compte client est déjà vérifié.");
         }
         const validationCode = Math.floor(100000 + Math.random() * 900000).toString();
         await this.prisma.client.update({
@@ -111,35 +111,42 @@ let ClientsService = class ClientsService {
         });
         await this.emailService.sendEmail({
             to: email,
-            subject: 'Confirmation de votre inscription',
-            template: path.join(process.cwd(), 'src/templates/confirmRegistration.hbs'),
+            subject: "Confirmation de votre inscription",
+            template: path.join(process.cwd(), "src/templates/confirmRegistration.hbs"),
         }, {
             clientName: `${client.nom} ${client.prenom}`,
             validationCode,
             year: new Date().getFullYear(),
         });
-        return { message: 'Un nouveau code de validation a été envoyé à votre adresse email.' };
+        return {
+            message: "Un nouveau code de validation a été envoyé à votre adresse email.",
+        };
     }
     async login(email, password) {
         const client = await this.prisma.client.findUnique({
             where: { email },
+            include: {
+                _count: {
+                    select: { Transport: true },
+                },
+            },
         });
         if (!client) {
             throw new common_1.NotFoundException(`Client avec l'email ${email} non trouvé`);
         }
         if (!client.verified) {
-            throw new common_1.NotAcceptableException('Le compte client n\'est pas encore vérifié.');
+            throw new common_1.NotAcceptableException("Le compte client n'est pas encore vérifié.");
         }
         const isPasswordValid = await bcrypt.compare(password, client.password);
         if (!isPasswordValid) {
-            throw new common_1.UnauthorizedException('Email ou mot de passe incorrect.');
+            throw new common_1.UnauthorizedException("Email ou mot de passe incorrect.");
         }
         const token = this.jwtService.sign({
             sub: client.id,
-            email: client.email
+            email: client.email,
         }, {
-            expiresIn: '7d',
-            secret: process.env.JWT_SECRET_CLIENT || "mema_group_client"
+            expiresIn: "7d",
+            secret: process.env.JWT_SECRET_CLIENT || "madamove_client",
         });
         const { password: _, validationCode, ...clientData } = client;
         return { token, client: clientData };
@@ -155,17 +162,21 @@ let ClientsService = class ClientsService {
         });
     }
     async findOne(id) {
+        if (id === undefined) {
+            throw new common_1.NotFoundException("Client non trouvé");
+        }
         const client = await this.prisma.client.findUnique({
             where: { id },
             include: {
-                courses: {
+                Transport: {
                     take: 10,
-                    orderBy: { startTime: "desc" },
                     include: {
                         chauffeur: true,
                     },
                 },
-                Transport: true,
+                _count: {
+                    select: { Transport: true },
+                },
                 locations: true,
             },
         });
@@ -194,7 +205,7 @@ let ClientsService = class ClientsService {
             throw new common_1.NotFoundException(`Client avec l'ID ${id} non trouvé`);
         }
         if (client.profileUrl !== null) {
-            const oldAvatarPath = path.join('./uploads/photos/clients', path.basename(client.profileUrl));
+            const oldAvatarPath = path.join("./uploads/photos/clients", path.basename(client.profileUrl));
             if (fs.existsSync(oldAvatarPath)) {
                 fs.unlinkSync(oldAvatarPath);
             }
@@ -222,16 +233,16 @@ let ClientsService = class ClientsService {
         const { email, message } = data;
         const client = await this.prisma.client.findUnique({
             where: {
-                email
-            }
+                email,
+            },
         });
         if (!client) {
             throw new common_1.NotFoundException(`Client avec l'ID ${email} non trouvé`);
         }
         await this.emailService.sendEmail({
             to: email,
-            subject: 'Message',
-            template: path.join(process.cwd(), 'src/templates/messageClient.hbs'),
+            subject: "Message",
+            template: path.join(process.cwd(), "src/templates/messageClient.hbs"),
         }, {
             message,
             clientName: `${client.nom} ${client.prenom}`,
@@ -239,15 +250,15 @@ let ClientsService = class ClientsService {
         });
     }
     async sendSms(data) {
-        const testPhoneNumber = 'whatsapp:+33774665378';
-        const testMessage = 'Hano ny tay eee';
+        const testPhoneNumber = "whatsapp:+33774665378";
+        const testMessage = "Hano ny tay eee";
         const { phone, message } = data;
         try {
             await this.smsService.sendSms(phone, message);
-            console.log('Test SMS sent successfully.');
+            console.log("Test SMS sent successfully.");
         }
         catch (error) {
-            console.error('Failed to send test SMS:', error);
+            console.error("Failed to send test SMS:", error);
         }
     }
     async forgotPassword(data) {
@@ -270,14 +281,16 @@ let ClientsService = class ClientsService {
         });
         await this.emailService.sendEmail({
             to: email,
-            subject: 'Réinitialisation de votre mot de passe',
-            template: path.join(process.cwd(), 'src/templates/resetPassword.hbs'),
+            subject: "Réinitialisation de votre mot de passe",
+            template: path.join(process.cwd(), "src/templates/resetPassword.hbs"),
         }, {
             clientName: `${client.nom} ${client.prenom}`,
             resetCode,
             year: new Date().getFullYear(),
         });
-        return { message: 'Un code de réinitialisation a été envoyé à votre adresse email.' };
+        return {
+            message: "Un code de réinitialisation a été envoyé à votre adresse email.",
+        };
     }
     async resetPassword(data) {
         const { email, resetCode, password } = data;
@@ -288,10 +301,10 @@ let ClientsService = class ClientsService {
             throw new common_1.NotFoundException(`Client avec l'email ${email} non trouvé`);
         }
         if (client.resetCode !== resetCode) {
-            throw new common_1.UnauthorizedException('Le code de réinitialisation est incorrect.');
+            throw new common_1.UnauthorizedException("Le code de réinitialisation est incorrect.");
         }
         if (!client.resetCodeExpires || new Date() > client.resetCodeExpires) {
-            throw new common_1.UnauthorizedException('Le code de réinitialisation a expiré.');
+            throw new common_1.UnauthorizedException("Le code de réinitialisation a expiré.");
         }
         const hashedPassword = await bcrypt.hash(password, 10);
         await this.prisma.client.update({
@@ -302,11 +315,11 @@ let ClientsService = class ClientsService {
                 resetCodeExpires: null,
             },
         });
-        return { message: 'Votre mot de passe a été réinitialisé avec succès.' };
+        return { message: "Votre mot de passe a été réinitialisé avec succès." };
     }
     async checkExistence(email, telephone) {
         if (!email && !telephone) {
-            throw new common_1.NotAcceptableException('Veuillez fournir un email ou un numéro de téléphone à vérifier.');
+            throw new common_1.NotAcceptableException("Veuillez fournir un email ou un numéro de téléphone à vérifier.");
         }
         const filters = { OR: [] };
         if (email) {
@@ -325,7 +338,7 @@ let ClientsService = class ClientsService {
         });
         return {
             exists: !!client,
-            field: client ? (client.email === email ? 'email' : 'telephone') : null,
+            field: client ? (client.email === email ? "email" : "telephone") : null,
             data: client || null,
         };
     }
@@ -334,7 +347,7 @@ let ClientsService = class ClientsService {
             where: { id: clientId },
         });
         if (!client) {
-            throw new common_1.NotFoundException('Client non trouvé');
+            throw new common_1.NotFoundException("Client non trouvé");
         }
         return this.prisma.favoriteDestination.create({
             data: {
@@ -353,7 +366,7 @@ let ClientsService = class ClientsService {
             },
         });
         if (!client) {
-            throw new common_1.NotFoundException('Client non trouvé');
+            throw new common_1.NotFoundException("Client non trouvé");
         }
         return client.favorites;
     }
@@ -365,7 +378,7 @@ let ClientsService = class ClientsService {
             },
         });
         if (!favorite) {
-            throw new common_1.NotFoundException('Destination favorite non trouvée');
+            throw new common_1.NotFoundException("Destination favorite non trouvée");
         }
         return this.prisma.favoriteDestination.update({
             where: { id: favoriteId },
@@ -380,7 +393,7 @@ let ClientsService = class ClientsService {
             },
         });
         if (!favorite) {
-            throw new common_1.NotFoundException('Destination favorite non trouvée');
+            throw new common_1.NotFoundException("Destination favorite non trouvée");
         }
         return this.prisma.favoriteDestination.delete({
             where: { id: favoriteId },
@@ -392,7 +405,7 @@ let ClientsService = class ClientsService {
             where: { telephone },
         });
         if (existingClient) {
-            throw new Error('Un client avec ce numéro de téléphone existe déjà.');
+            throw new Error("Un client avec ce numéro de téléphone existe déjà.");
         }
         const client = await this.prisma.client.create({
             data: {
@@ -402,7 +415,7 @@ let ClientsService = class ClientsService {
                 verified: true,
             },
         });
-        const welcomeMessage = `Bienvenue ${clientData.nom} ! Votre compte client MEMA a été créé avec succès. Vous pouvez maintenant vous connecter en utilisant votre numéro de téléphone.`;
+        const welcomeMessage = `Bienvenue ${clientData.nom} ! Votre compte client MADAMOVE a été créé avec succès. Vous pouvez maintenant vous connecter en utilisant votre numéro de téléphone.`;
         await this.smsService.sendSms(telephone, welcomeMessage);
         return client;
     }
@@ -411,31 +424,31 @@ let ClientsService = class ClientsService {
             where: { telephone },
         });
         if (!client) {
-            throw new common_1.NotFoundException('Aucun client trouvé avec ce numéro de téléphone');
+            throw new common_1.NotFoundException("Aucun client trouvé avec ce numéro de téléphone");
         }
         const otp = await this.smsService.sendOtp(telephone);
         return {
-            message: 'Code OTP envoyé avec succès',
+            message: "Code OTP envoyé avec succès",
             telephone,
         };
     }
     async loginBySms(telephone, otp) {
         const isOtpValid = await this.smsService.verifyOtp(telephone, otp);
         if (!isOtpValid) {
-            throw new common_1.NotFoundException('Code OTP invalide ou expiré');
+            throw new common_1.NotFoundException("Code OTP invalide ou expiré");
         }
         const client = await this.prisma.client.findUnique({
             where: { telephone },
         });
         if (!client) {
-            throw new common_1.NotFoundException('Client non trouvé');
+            throw new common_1.NotFoundException("Client non trouvé");
         }
         const token = this.jwtService.sign({
             sub: client.id,
             telephone: client.telephone,
         }, {
             expiresIn: "7d",
-            secret: process.env.JWT_SECRET_CLIENT || "mema_group_client",
+            secret: process.env.JWT_SECRET_CLIENT || "madamove_client",
         });
         const { password, validationCode, ...clientWithoutSensitiveData } = client;
         return {
@@ -448,11 +461,11 @@ let ClientsService = class ClientsService {
             where: { telephone },
         });
         if (!client) {
-            throw new common_1.NotFoundException('Aucun client trouvé avec ce numéro de téléphone');
+            throw new common_1.NotFoundException("Aucun client trouvé avec ce numéro de téléphone");
         }
         await this.smsService.resendOtp(telephone);
         return {
-            message: 'Nouveau code OTP envoyé avec succès',
+            message: "Nouveau code OTP envoyé avec succès",
             telephone,
         };
     }

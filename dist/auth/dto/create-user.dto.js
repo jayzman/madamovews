@@ -18,7 +18,7 @@ class CreateUserDto {
 exports.CreateUserDto = CreateUserDto;
 __decorate([
     (0, swagger_1.ApiProperty)({
-        example: "admin@memagroup.com",
+        example: "admin@madamove.com",
         description: "Adresse email de l'utilisateur",
         type: 'string'
     }),

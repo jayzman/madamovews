@@ -97,6 +97,9 @@ export declare class ClientsService {
     login(email: string, password: string): Promise<{
         token: string;
         client: {
+            _count: {
+                Transport: number;
+            };
             email: string;
             nom: string;
             prenom: string;
@@ -154,7 +157,10 @@ export declare class ClientsService {
         stripeCustomerId: string | null;
     }[]>;
     findOne(id: number): Promise<{
-        courses: ({
+        _count: {
+            Transport: number;
+        };
+        Transport: ({
             chauffeur: {
                 email: string;
                 password: string | null;
@@ -178,26 +184,6 @@ export declare class ClientsService {
                 phoneVerified: boolean | null;
             };
         } & {
-            id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            chauffeurId: number | null;
-            startTime: Date | null;
-            clientId: number | null;
-            startLocation: string;
-            endLocation: string;
-            endTime: Date | null;
-            estimatedDuration: string;
-            currentLocation: string | null;
-            estimatedPrice: number;
-            finalPrice: number | null;
-            paymentMethod: string;
-            status: import(".prisma/client").$Enums.StatutCourse;
-            typeService: import(".prisma/client").$Enums.TypeService;
-            locationId: number | null;
-            transportId: number | null;
-        })[];
-        Transport: {
             id: number;
             createdAt: Date;
             updatedAt: Date;
@@ -232,7 +218,7 @@ export declare class ClientsService {
             cashConfirmedBy: number | null;
             promoCodeId: number | null;
             montantReduction: number;
-        }[];
+        })[];
         locations: {
             id: number;
             createdAt: Date;
