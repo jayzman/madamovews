@@ -1,0 +1,40 @@
+name: Deploy Madamovews with PM2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "🚀 Déploiement en cours sur le VPS..."
+            cd /root/madamovews
+
+            echo "📥 Mise à jour du code"
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "📦 Installation des dépendances"
+            npm ci
+
+            echo "🏗️ Build de l'application Next.js"
+            npm run build
+
+            echo "🔄 Redémarrage de PM2"
+            pm2 restart madamovews || pm2 start npm --name "madamovews" -- start
+            pm2 save
+
+            echo "✅ Déploiement terminé"
