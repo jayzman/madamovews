@@ -23,18 +23,24 @@ jobs:
             echo "🚀 Déploiement en cours sur le VPS..."
             cd /root/madamovews
 
-            echo "📥 Mise à jour du code"
+            echo "📥 Mise à jour du code..."
             git fetch origin main
             git reset --hard origin/main
 
-            echo "📦 Installation des dépendances"
+            echo "📦 Installation des dépendances..."
             npm ci
 
-            echo "🏗️ Build de l'application Next.js"
+            echo "🧬 Génération du client Prisma..."
+            npx prisma generate
+            
+            echo "🗄️ Migration Prisma (en mode dev)..."
+            npx prisma migrate dev --name "auto-deploy" --skip-seed --preview-feature
+
+            echo "🏗️ Build de l'application..."
             npm run build
 
-            echo "🔄 Redémarrage de PM2"
+            echo "🔄 Redémarrage de PM2..."
             pm2 restart madamovews || pm2 start npm --name "madamovews" -- start
             pm2 save
 
-            echo "✅ Déploiement terminé"
+            echo "✅ Déploiement terminé avec succès !"
