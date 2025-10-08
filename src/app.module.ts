@@ -28,6 +28,8 @@ import { TransportsModule } from "./transports/transports.module";
 import { AdminMessagesModule } from "./admin-messages/admin-messages.module";
 import { PromoCodesModule } from './promo-codes/promo-codes.module';
 import { LivraisonModule } from "./livraison/livraison.module";
+import { HttpModule } from "@nestjs/axios";
+import { MvolaModule } from "./mvola/mvola.module";
 
 @Module({
 imports: [
@@ -80,7 +82,9 @@ imports: [
   AdminMessagesModule,
   SmsModule,
   PromoCodesModule,
-  LivraisonModule
+  LivraisonModule,
+  HttpModule,
+  MvolaModule,
 ], 
 providers: [
   MailService,

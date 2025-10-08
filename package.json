@@ -27,6 +27,7 @@
   "dependencies": {
     "@googlemaps/google-maps-services-js": "^3.4.1",
     "@nestjs-modules/mailer": "^2.0.2",
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.11",
     "@nestjs/config": "^4.0.1",
     "@nestjs/core": "^11.0.11",

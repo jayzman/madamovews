@@ -568,3 +568,14 @@ enum StatutPaiement {
   PAYE             // Paiement effectué
   REFUSE           // Paiement refusé
 }
+
+model Payment {
+  id                  String   @id @default(uuid())
+  customerMsisdn      String
+  amount              Float
+  description         String
+  status              String   @default("pending")
+  serverCorrelationId String?
+  transactionRef      String?
+  createdAt           DateTime @default(now())
+}
